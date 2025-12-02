@@ -7,7 +7,8 @@ import com.example.chatagent.domain.model.AgentJsonResponse
 import com.example.chatagent.domain.model.Message
 import com.example.chatagent.domain.repository.ChatRepository
 import com.google.gson.Gson
-import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
@@ -60,8 +61,8 @@ class ChatRepositoryImpl @Inject constructor(
         Always follow this exact format!
     """.trimIndent()
 
-    override suspend fun sendMessage(message: String): Result<Message> {
-        return try {
+    override suspend fun sendMessage(message: String): Result<Message> = withContext(Dispatchers.IO) {
+        try {
             conversationHistory.add(
                 MessageDto(role = "user", content = message)
             )
@@ -75,7 +76,6 @@ class ChatRepositoryImpl @Inject constructor(
 
             val assistantMessage = response.content.firstOrNull()?.text ?: "No response"
 
-            // Очистити JSON від можливих markdown блоків
             val cleanedJson = assistantMessage
                 .trim()
                 .removePrefix("```json")
@@ -87,7 +87,6 @@ class ChatRepositoryImpl @Inject constructor(
                 MessageDto(role = "assistant", content = cleanedJson)
             )
 
-            // Спроба парсити JSON відповідь
             val jsonResponse = try {
                 gson.fromJson(cleanedJson, AgentJsonResponse::class.java)
             } catch (e: Exception) {
