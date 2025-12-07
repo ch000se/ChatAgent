@@ -6,6 +6,9 @@ import com.example.chatagent.data.remote.dto.MessageDto
 import com.example.chatagent.domain.model.Message
 import com.example.chatagent.domain.repository.ChatRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -17,7 +20,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     private val maxHistoryMessages = 20
 
-    private val systemPrompt = """
+    private val defaultSystemPrompt = """
         You are a friendly Music Curator AI assistant. Your goal is to learn about the user's music preferences through conversation and create a personalized playlist for them.
 
         HOW TO WORK:
@@ -68,6 +71,18 @@ class ChatRepositoryImpl @Inject constructor(
         - Keep responses concise and engaging
     """.trimIndent()
 
+    private val _currentSystemPrompt = MutableStateFlow(defaultSystemPrompt)
+
+    override fun setSystemPrompt(prompt: String) {
+        _currentSystemPrompt.value = prompt
+    }
+
+    override fun getSystemPrompt(): StateFlow<String> = _currentSystemPrompt.asStateFlow()
+
+    override fun clearConversationHistory() {
+        conversationHistory.clear()
+    }
+
     override suspend fun sendMessage(message: String): Result<Message> = withContext(Dispatchers.IO) {
         try {
             conversationHistory.add(
@@ -81,7 +96,7 @@ class ChatRepositoryImpl @Inject constructor(
             }
 
             val request = ChatRequest(
-                system = systemPrompt,
+                system = _currentSystemPrompt.value,
                 messages = limitedHistory,
                 maxTokens = 2048
             )

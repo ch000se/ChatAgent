@@ -3,6 +3,7 @@ package com.example.chatagent.presentation.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.repository.ChatRepository
 import com.example.chatagent.domain.usecase.SendMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +16,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val sendMessageUseCase: SendMessageUseCase
+    private val sendMessageUseCase: SendMessageUseCase,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    val currentSystemPrompt: StateFlow<String> = chatRepository.getSystemPrompt()
 
     fun onInputTextChanged(text: String) {
         _uiState.update { it.copy(inputText = text) }
@@ -67,5 +71,14 @@ class ChatViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun setSystemPrompt(prompt: String) {
+        chatRepository.setSystemPrompt(prompt)
+    }
+
+    fun clearConversation() {
+        chatRepository.clearConversationHistory()
+        _uiState.update { it.copy(messages = emptyList()) }
     }
 }
