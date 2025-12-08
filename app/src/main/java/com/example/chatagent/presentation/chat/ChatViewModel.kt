@@ -24,6 +24,7 @@ class ChatViewModel @Inject constructor(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     val currentSystemPrompt: StateFlow<String> = chatRepository.getSystemPrompt()
+    val currentTemperature: StateFlow<Double> = chatRepository.getTemperature()
 
     fun onInputTextChanged(text: String) {
         _uiState.update { it.copy(inputText = text) }
@@ -75,6 +76,11 @@ class ChatViewModel @Inject constructor(
 
     fun setSystemPrompt(prompt: String) {
         chatRepository.setSystemPrompt(prompt)
+    }
+
+    fun setTemperature(temperature: Double) {
+        chatRepository.setTemperature(temperature)
+        _uiState.update { it.copy(currentTemperature = temperature) }
     }
 
     fun clearConversation() {

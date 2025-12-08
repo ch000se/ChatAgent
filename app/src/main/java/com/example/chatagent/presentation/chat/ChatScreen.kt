@@ -118,6 +118,15 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            TemperatureSelector(
+                currentTemperature = uiState.currentTemperature,
+                onTemperatureSelected = { temperature ->
+                    viewModel.setTemperature(temperature)
+                    viewModel.clearConversation()
+                },
+                enabled = !uiState.isLoading
+            )
+
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -147,6 +156,58 @@ fun ChatScreen(
                 onSendClick = viewModel::sendMessage,
                 enabled = !uiState.isLoading
             )
+        }
+    }
+}
+
+@Composable
+fun TemperatureSelector(
+    currentTemperature: Double,
+    onTemperatureSelected: (Double) -> Unit,
+    enabled: Boolean = true
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 4.dp,
+        tonalElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Temperature:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            listOf(0.0, 0.7, 1.0).forEach { temp ->
+                Button(
+                    onClick = { onTemperatureSelected(temp) },
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = if (currentTemperature == temp) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        contentColor = if (currentTemperature == temp) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                ) {
+                    Text(
+                        text = temp.toString(),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
         }
     }
 }

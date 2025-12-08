@@ -72,12 +72,19 @@ class ChatRepositoryImpl @Inject constructor(
     """.trimIndent()
 
     private val _currentSystemPrompt = MutableStateFlow(defaultSystemPrompt)
+    private val _currentTemperature = MutableStateFlow(1.0)
 
     override fun setSystemPrompt(prompt: String) {
         _currentSystemPrompt.value = prompt
     }
 
     override fun getSystemPrompt(): StateFlow<String> = _currentSystemPrompt.asStateFlow()
+
+    override fun setTemperature(temperature: Double) {
+        _currentTemperature.value = temperature
+    }
+
+    override fun getTemperature(): StateFlow<Double> = _currentTemperature.asStateFlow()
 
     override fun clearConversationHistory() {
         conversationHistory.clear()
@@ -96,9 +103,10 @@ class ChatRepositoryImpl @Inject constructor(
             }
 
             val request = ChatRequest(
-                system = _currentSystemPrompt.value,
+//              system = _currentSystemPrompt.value,
                 messages = limitedHistory,
-                maxTokens = 2048
+                maxTokens = 2048,
+                temperature = _currentTemperature.value
             )
 
             val response = apiService.sendMessage(request)
