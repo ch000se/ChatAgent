@@ -9,8 +9,11 @@ data class ChatRequest(
     @SerializedName("max_tokens")
     val maxTokens: Int = 1024,
 
-    @SerializedName("system")
-    val system: String? = null,
+    @SerializedName("temperature")
+    val temperature: Double = 1.0,
+
+//    @SerializedName("system")
+//    val system: String? = null,
 
     @SerializedName("messages")
     val messages: List<MessageDto>

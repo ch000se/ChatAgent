@@ -8,4 +8,6 @@ interface ChatRepository {
     fun setSystemPrompt(prompt: String)
     fun getSystemPrompt(): StateFlow<String>
     fun clearConversationHistory()
+    fun setTemperature(temperature: Double)
+    fun getTemperature(): StateFlow<Double>
 }
