@@ -31,6 +31,7 @@ android {
         // Додаємо API ключ в BuildConfig
         buildConfigField("String", "API_KEY", "\"${properties.getProperty("API_KEY", "")}\"")
         buildConfigField("String", "API_URL", "\"${properties.getProperty("API_URL", "https://api.anthropic.com/v1/")}\"")
+        buildConfigField("String", "HF_API_KEY", "\"${properties.getProperty("HF_API_KEY", "")}\"")
     }
 
     buildTypes {
@@ -67,6 +68,9 @@ dependencies {
 
     // Material Icons Extended
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
 
     // ViewModel & Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)

@@ -1,6 +1,8 @@
 package com.example.chatagent.di
 
+import com.example.chatagent.data.repository.BenchmarkRepositoryImpl
 import com.example.chatagent.data.repository.ChatRepositoryImpl
+import com.example.chatagent.domain.repository.BenchmarkRepository
 import com.example.chatagent.domain.repository.ChatRepository
 import dagger.Binds
 import dagger.Module
@@ -17,4 +19,10 @@ abstract class AppModule {
     abstract fun bindChatRepository(
         chatRepositoryImpl: ChatRepositoryImpl
     ): ChatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBenchmarkRepository(
+        benchmarkRepositoryImpl: BenchmarkRepositoryImpl
+    ): BenchmarkRepository
 }
