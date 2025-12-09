@@ -11,8 +11,13 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -59,7 +64,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @ClaudeRetrofit
+    fun provideClaudeRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_URL)
             .client(okHttpClient)
@@ -69,7 +75,40 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideChatApiService(retrofit: Retrofit): ChatApiService {
+    fun provideChatApiService(@ClaudeRetrofit retrofit: Retrofit): ChatApiService {
         return retrofit.create(ChatApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @HuggingFaceRetrofit
+    fun provideHuggingFaceRetrofit(): Retrofit {
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer ${BuildConfig.HF_API_KEY}")
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl("https://router.huggingface.co/v1/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideHuggingFaceApiService(
+        @HuggingFaceRetrofit retrofit: Retrofit
+    ): com.example.chatagent.data.remote.api.HuggingFaceApiService {
+        return retrofit.create(com.example.chatagent.data.remote.api.HuggingFaceApiService::class.java)
     }
 }

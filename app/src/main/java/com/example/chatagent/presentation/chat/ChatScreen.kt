@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +62,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
+    onNavigateToBenchmark: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,6 +101,12 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = onNavigateToBenchmark) {
+                        Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = "Model Benchmark"
+                        )
+                    }
                     IconButton(onClick = { showPromptDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
