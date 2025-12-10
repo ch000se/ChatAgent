@@ -7,7 +7,8 @@ data class Message(
     val content: String,
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
-    val jsonResponse: AgentJsonResponse? = null
+    val jsonResponse: AgentJsonResponse? = null,
+    val tokenUsage: TokenUsage? = null
 )
 
 data class AgentJsonResponse(
@@ -25,4 +26,12 @@ data class AgentJsonResponse(
 
     @SerializedName("sources")
     val sources: List<String>? = null
+)
+
+data class TokenUsage(
+    val inputTokens: Int,
+    val outputTokens: Int,
+    val totalTokens: Int,
+    val cacheCreationInputTokens: Int? = null,
+    val cacheReadInputTokens: Int? = null
 )
