@@ -7,5 +7,8 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val inputText: String = "",
-    val currentTemperature: Double = 1.0
+    val currentTemperature: Double = 1.0,
+    val totalInputTokens: Int = 0,
+    val totalOutputTokens: Int = 0,
+    val totalTokens: Int = 0
 )

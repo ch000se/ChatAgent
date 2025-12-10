@@ -4,6 +4,7 @@ import com.example.chatagent.data.remote.api.ChatApiService
 import com.example.chatagent.data.remote.dto.ChatRequest
 import com.example.chatagent.data.remote.dto.MessageDto
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.model.TokenUsage
 import com.example.chatagent.domain.repository.ChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,11 +118,22 @@ class ChatRepositoryImpl @Inject constructor(
                 MessageDto(role = "assistant", content = assistantMessage)
             )
 
+            val tokenUsage = response.usage?.let { usage ->
+                TokenUsage(
+                    inputTokens = usage.inputTokens,
+                    outputTokens = usage.outputTokens,
+                    totalTokens = usage.inputTokens + usage.outputTokens,
+                    cacheCreationInputTokens = usage.cacheCreationInputTokens,
+                    cacheReadInputTokens = usage.cacheReadInputTokens
+                )
+            }
+
             val agentMessage = Message(
                 id = response.id,
                 content = assistantMessage,
                 isFromUser = false,
-                jsonResponse = null
+                jsonResponse = null,
+                tokenUsage = tokenUsage
             )
 
             Result.success(agentMessage)

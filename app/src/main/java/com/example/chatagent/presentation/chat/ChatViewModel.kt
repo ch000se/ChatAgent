@@ -52,10 +52,22 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             sendMessageUseCase(messageText)
                 .onSuccess { agentMessage ->
-                    _uiState.update {
-                        it.copy(
-                            messages = it.messages + agentMessage,
-                            isLoading = false
+                    _uiState.update { currentState ->
+                        val newMessages = currentState.messages + agentMessage
+
+                        // Calculate cumulative token usage
+                        val (inputTokens, outputTokens) = newMessages
+                            .mapNotNull { it.tokenUsage }
+                            .fold(0 to 0) { (input, output), usage ->
+                                (input + usage.inputTokens) to (output + usage.outputTokens)
+                            }
+
+                        currentState.copy(
+                            messages = newMessages,
+                            isLoading = false,
+                            totalInputTokens = inputTokens,
+                            totalOutputTokens = outputTokens,
+                            totalTokens = inputTokens + outputTokens
                         )
                     }
                 }
@@ -85,6 +97,13 @@ class ChatViewModel @Inject constructor(
 
     fun clearConversation() {
         chatRepository.clearConversationHistory()
-        _uiState.update { it.copy(messages = emptyList()) }
+        _uiState.update {
+            it.copy(
+                messages = emptyList(),
+                totalInputTokens = 0,
+                totalOutputTokens = 0,
+                totalTokens = 0
+            )
+        }
     }
 }

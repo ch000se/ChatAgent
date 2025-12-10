@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,6 +55,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.chatagent.domain.model.Message
 import com.example.chatagent.domain.model.SystemPrompts
+import com.example.chatagent.domain.model.TokenTestScenarios
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,6 +72,7 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var showPromptDialog by remember { mutableStateOf(false) }
+    var showTokenTestDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -96,11 +99,27 @@ fun ChatScreen(
         )
     }
 
+    if (showTokenTestDialog) {
+        TokenTestScenariosDialog(
+            onDismiss = { showTokenTestDialog = false },
+            onScenarioSelected = { scenario ->
+                viewModel.onInputTextChanged(scenario)
+                showTokenTestDialog = false
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = { showTokenTestDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = "Token Test Scenarios"
+                        )
+                    }
                     IconButton(onClick = onNavigateToBenchmark) {
                         Icon(
                             imageVector = Icons.Default.BarChart,
@@ -133,6 +152,12 @@ fun ChatScreen(
                     viewModel.clearConversation()
                 },
                 enabled = !uiState.isLoading
+            )
+
+            TokenUsageDisplay(
+                inputTokens = uiState.totalInputTokens,
+                outputTokens = uiState.totalOutputTokens,
+                totalTokens = uiState.totalTokens
             )
 
             LazyColumn(
@@ -221,6 +246,75 @@ fun TemperatureSelector(
 }
 
 @Composable
+fun TokenUsageDisplay(
+    inputTokens: Int,
+    outputTokens: Int,
+    totalTokens: Int
+) {
+    if (totalTokens > 0) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            tonalElevation = 1.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TokenMetric(
+                    label = "Input",
+                    value = inputTokens
+                )
+                Divider(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f)
+                )
+                TokenMetric(
+                    label = "Output",
+                    value = outputTokens
+                )
+                Divider(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f)
+                )
+                TokenMetric(
+                    label = "Total",
+                    value = totalTokens
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TokenMetric(
+    label: String,
+    value: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+        )
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+    }
+}
+
+@Composable
 fun MessageBubble(message: Message) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -259,15 +353,34 @@ fun MessageBubble(message: Message) {
                     }
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = formatTimestamp(message.timestamp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (message.isFromUser) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    } else {
-                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatTimestamp(message.timestamp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (message.isFromUser) {
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        } else {
+                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        }
+                    )
+
+                    message.tokenUsage?.let { usage ->
+                        Text(
+                            text = "${usage.inputTokens}/${usage.outputTokens} tokens",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (message.isFromUser) {
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                            } else {
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
@@ -409,6 +522,69 @@ fun SystemPromptDialog(
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 }
                             )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
+fun TokenTestScenariosDialog(
+    onDismiss: () -> Unit,
+    onScenarioSelected: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Token Test Scenarios") },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(TokenTestScenarios.allScenarios) { scenario ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onScenarioSelected(scenario.prompt) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Text(
+                                text = scenario.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = scenario.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "Est: ${scenario.estimatedInputTokens}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = scenario.expectedBehavior,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
                         }
                     }
                 }
