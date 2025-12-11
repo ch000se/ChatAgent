@@ -53,13 +53,34 @@ object NetworkModule {
         authInterceptor: Interceptor,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
+
+        // Only for DEBUG: Bypass SSL certificate verification
+        // WARNING: This is UNSAFE and should NEVER be used in production!
+        if (BuildConfig.DEBUG) {
+            try {
+                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+
+                builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                builder.hostnameVerifier { _, _ -> true }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return builder.build()
     }
 
     @Provides
@@ -83,7 +104,7 @@ object NetworkModule {
     @Singleton
     @HuggingFaceRetrofit
     fun provideHuggingFaceRetrofit(): Retrofit {
-        val client = OkHttpClient.Builder()
+        val clientBuilder = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .addHeader("Authorization", "Bearer ${BuildConfig.HF_API_KEY}")
@@ -94,7 +115,27 @@ object NetworkModule {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
-            .build()
+
+        // Only for DEBUG: Bypass SSL certificate verification
+        if (BuildConfig.DEBUG) {
+            try {
+                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+
+                clientBuilder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                clientBuilder.hostnameVerifier { _, _ -> true }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        val client = clientBuilder.build()
 
         return Retrofit.Builder()
             .baseUrl("https://router.huggingface.co/v1/")

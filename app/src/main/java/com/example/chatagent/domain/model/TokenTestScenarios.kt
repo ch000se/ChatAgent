@@ -173,6 +173,20 @@ object TokenTestScenarios {
             prompt = veryLongRequest,
             estimatedInputTokens = "800-1500 tokens",
             expectedBehavior = "Detailed response, highest cost"
+        ),
+        TestScenario(
+            name = "Compression Demo (30+ messages)",
+            description = "Test conversation summarization with rapid exchanges",
+            prompt = """
+                Let's test message compression! Have a quick conversation with me.
+                Ask me 30 SHORT questions (one at a time) about my favorite things,
+                hobbies, daily routine, travel experiences, and weekend plans.
+                Keep each question SHORT (5-10 words). After each of my answers,
+                immediately ask the next question. This will trigger automatic
+                summarization after 10 messages, demonstrating the compression feature.
+            """.trimIndent(),
+            estimatedInputTokens = "150-250 tokens",
+            expectedBehavior = "Will trigger 2-3 summarizations, showing token savings"
         )
     )
 

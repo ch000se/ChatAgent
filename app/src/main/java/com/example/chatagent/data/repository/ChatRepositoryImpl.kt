@@ -4,6 +4,8 @@ import com.example.chatagent.data.remote.api.ChatApiService
 import com.example.chatagent.data.remote.dto.ChatRequest
 import com.example.chatagent.data.remote.dto.MessageDto
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.model.SummarizationConfig
+import com.example.chatagent.domain.model.SummarizationStats
 import com.example.chatagent.domain.model.TokenUsage
 import com.example.chatagent.domain.repository.ChatRepository
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +22,9 @@ class ChatRepositoryImpl @Inject constructor(
     private val conversationHistory = mutableListOf<MessageDto>()
 
     private val maxHistoryMessages = 20
+
+    private val _summarizationConfig = MutableStateFlow(SummarizationConfig())
+    private val _summarizationStats = MutableStateFlow(SummarizationStats())
 
     private val defaultSystemPrompt = """
         You are a friendly Music Curator AI assistant. Your goal is to learn about the user's music preferences through conversation and create a personalized playlist for them.
@@ -87,12 +92,27 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun getTemperature(): StateFlow<Double> = _currentTemperature.asStateFlow()
 
+    override fun setSummarizationConfig(config: SummarizationConfig) {
+        _summarizationConfig.value = config
+    }
+
+    override fun getSummarizationConfig(): StateFlow<SummarizationConfig> =
+        _summarizationConfig.asStateFlow()
+
+    override fun getSummarizationStats(): StateFlow<SummarizationStats> =
+        _summarizationStats.asStateFlow()
+
     override fun clearConversationHistory() {
         conversationHistory.clear()
     }
 
     override suspend fun sendMessage(message: String): Result<Message> = withContext(Dispatchers.IO) {
         try {
+            // Check if we should compress before adding new message
+            if (shouldSummarize()) {
+                compressConversationHistory()
+            }
+
             conversationHistory.add(
                 MessageDto(role = "user", content = message)
             )
@@ -104,7 +124,7 @@ class ChatRepositoryImpl @Inject constructor(
             }
 
             val request = ChatRequest(
-//              system = _currentSystemPrompt.value,
+                system = _currentSystemPrompt.value,
                 messages = limitedHistory,
                 maxTokens = 2048,
                 temperature = _currentTemperature.value
@@ -140,5 +160,78 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun shouldSummarize(): Boolean {
+        val config = _summarizationConfig.value
+        if (!config.enabled) return false
+        return conversationHistory.size >= config.triggerThreshold
+    }
+
+    private suspend fun compressConversationHistory() {
+        val config = _summarizationConfig.value
+
+        try {
+            val splitIndex = (conversationHistory.size - config.retentionCount).coerceAtLeast(0)
+            if (splitIndex <= 1) return
+
+            val messagesToSummarize = conversationHistory.take(splitIndex)
+            val messagesToKeep = conversationHistory.drop(splitIndex)
+
+            // Calculate original token count (estimate: ~4 chars = 1 token)
+            val originalTokenCount = messagesToSummarize.sumOf { it.content.length / 4 }
+
+            // Create summarization request
+            val summarizationPrompt = buildSummarizationPrompt(messagesToSummarize)
+            val request = ChatRequest(
+                system = "You are a conversation summarizer. Create concise summaries preserving key context.",
+                messages = listOf(MessageDto(role = "user", content = summarizationPrompt)),
+                maxTokens = 500,
+                temperature = 0.3
+            )
+
+            val response = apiService.sendMessage(request)
+            val summaryText = response.content.firstOrNull()?.text ?: return
+            val summaryTokens = response.usage?.outputTokens ?: 0
+
+            // Create summary message
+            val summaryMessage = MessageDto(
+                role = "assistant",
+                content = "[SUMMARY of ${messagesToSummarize.size} messages]\n\n$summaryText"
+            )
+
+            // Replace old messages with summary
+            conversationHistory.clear()
+            conversationHistory.add(summaryMessage)
+            conversationHistory.addAll(messagesToKeep)
+
+            // Update stats
+            val tokensSaved = originalTokenCount - summaryTokens
+            val currentStats = _summarizationStats.value
+            _summarizationStats.value = currentStats.copy(
+                totalSummarizations = currentStats.totalSummarizations + 1,
+                tokensSaved = currentStats.tokensSaved + tokensSaved,
+                compressionRatio = if (originalTokenCount > 0) {
+                    tokensSaved.toDouble() / originalTokenCount.toDouble()
+                } else 0.0
+            )
+
+        } catch (e: Exception) {
+            // On failure, keep original messages - don't lose data
+        }
+    }
+
+    private fun buildSummarizationPrompt(messages: List<MessageDto>): String {
+        val conversationText = messages.joinToString("\n\n") { msg ->
+            "${msg.role.uppercase()}: ${msg.content}"
+        }
+
+        return """
+            Summarize the following conversation, preserving all important context, decisions, and information:
+
+            $conversationText
+
+            Provide a concise summary that maintains key details while reducing length.
+        """.trimIndent()
     }
 }

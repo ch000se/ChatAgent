@@ -19,8 +19,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -126,6 +128,21 @@ fun ChatScreen(
                             contentDescription = "Model Benchmark"
                         )
                     }
+                    IconButton(onClick = { viewModel.toggleSummarization(!uiState.summarizationEnabled) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                            contentDescription = if (uiState.summarizationEnabled) {
+                                "Disable Summarization"
+                            } else {
+                                "Enable Summarization"
+                            },
+                            tint = if (uiState.summarizationEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                            }
+                        )
+                    }
                     IconButton(onClick = { showPromptDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -158,6 +175,13 @@ fun ChatScreen(
                 inputTokens = uiState.totalInputTokens,
                 outputTokens = uiState.totalOutputTokens,
                 totalTokens = uiState.totalTokens
+            )
+
+            SummarizationStatsDisplay(
+                enabled = uiState.summarizationEnabled,
+                summarizationCount = uiState.totalSummarizations,
+                tokensSaved = uiState.tokensSaved,
+                compressionRatio = uiState.compressionRatio
             )
 
             LazyColumn(
@@ -315,6 +339,53 @@ fun TokenMetric(
 }
 
 @Composable
+fun SummarizationStatsDisplay(
+    enabled: Boolean,
+    summarizationCount: Int,
+    tokensSaved: Int,
+    compressionRatio: Double
+) {
+    if (!enabled || summarizationCount == 0) return
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+        tonalElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LibraryBooks,
+                    contentDescription = "Summaries",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Text(
+                    text = "$summarizationCount summaries",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+
+            Text(
+                text = "$tokensSaved tokens saved (${(compressionRatio * 100).toInt()}%)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        }
+    }
+}
+
+@Composable
 fun MessageBubble(message: Message) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -333,16 +404,47 @@ fun MessageBubble(message: Message) {
                 bottomEnd = if (message.isFromUser) 4.dp else 16.dp
             ),
             colors = CardDefaults.cardColors(
-                containerColor = if (message.isFromUser) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.secondaryContainer
+                containerColor = when {
+                    message.isSummary -> MaterialTheme.colorScheme.tertiaryContainer
+                    message.isFromUser -> MaterialTheme.colorScheme.primaryContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
                 }
             )
         ) {
             Column(
                 modifier = Modifier.padding(12.dp)
             ) {
+                // Summary indicator
+                if (message.isSummary) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LibraryBooks,
+                            contentDescription = "Summary",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Text(
+                            text = "Summary of ${message.summarizedMessageCount ?: 0} messages",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                        )
+                        message.originalTokenCount?.let { original ->
+                            val saved = original - (message.tokenUsage?.totalTokens ?: 0)
+                            if (saved > 0) {
+                                Text(
+                                    text = "• $saved tokens saved",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,

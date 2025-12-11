@@ -12,8 +12,8 @@ data class ChatRequest(
     @SerializedName("temperature")
     val temperature: Double = 1.0,
 
-//    @SerializedName("system")
-//    val system: String? = null,
+    @SerializedName("system")
+    val system: String? = null,
 
     @SerializedName("messages")
     val messages: List<MessageDto>

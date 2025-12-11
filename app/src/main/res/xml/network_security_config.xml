@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
@@ -9,6 +15,14 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">router.huggingface.co</domain>
         <domain includeSubdomains="true">huggingface.co</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.anthropic.com</domain>
+        <domain includeSubdomains="true">anthropic.com</domain>
         <trust-anchors>
             <certificates src="system" />
             <certificates src="user" />
