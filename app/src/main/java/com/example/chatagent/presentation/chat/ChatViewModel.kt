@@ -3,6 +3,8 @@ package com.example.chatagent.presentation.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.model.SummarizationConfig
+import com.example.chatagent.domain.model.SummarizationStats
 import com.example.chatagent.domain.repository.ChatRepository
 import com.example.chatagent.domain.usecase.SendMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +27,31 @@ class ChatViewModel @Inject constructor(
 
     val currentSystemPrompt: StateFlow<String> = chatRepository.getSystemPrompt()
     val currentTemperature: StateFlow<Double> = chatRepository.getTemperature()
+    val summarizationConfig: StateFlow<SummarizationConfig> = chatRepository.getSummarizationConfig()
+    val summarizationStats: StateFlow<SummarizationStats> = chatRepository.getSummarizationStats()
+
+    init {
+        // Observe summarization stats and update UI state
+        viewModelScope.launch {
+            summarizationStats.collect { stats ->
+                _uiState.update {
+                    it.copy(
+                        totalSummarizations = stats.totalSummarizations,
+                        tokensSaved = stats.tokensSaved,
+                        compressionRatio = stats.compressionRatio
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            summarizationConfig.collect { config ->
+                _uiState.update {
+                    it.copy(summarizationEnabled = config.enabled)
+                }
+            }
+        }
+    }
 
     fun onInputTextChanged(text: String) {
         _uiState.update { it.copy(inputText = text) }
@@ -105,5 +132,12 @@ class ChatViewModel @Inject constructor(
                 totalTokens = 0
             )
         }
+    }
+
+    fun toggleSummarization(enabled: Boolean) {
+        val currentConfig = summarizationConfig.value
+        chatRepository.setSummarizationConfig(
+            currentConfig.copy(enabled = enabled)
+        )
     }
 }

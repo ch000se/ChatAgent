@@ -10,5 +10,9 @@ data class ChatUiState(
     val currentTemperature: Double = 1.0,
     val totalInputTokens: Int = 0,
     val totalOutputTokens: Int = 0,
-    val totalTokens: Int = 0
+    val totalTokens: Int = 0,
+    val summarizationEnabled: Boolean = true,
+    val totalSummarizations: Int = 0,
+    val tokensSaved: Int = 0,
+    val compressionRatio: Double = 0.0
 )

@@ -8,7 +8,10 @@ data class Message(
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
     val jsonResponse: AgentJsonResponse? = null,
-    val tokenUsage: TokenUsage? = null
+    val tokenUsage: TokenUsage? = null,
+    val isSummary: Boolean = false,
+    val summarizedMessageCount: Int? = null,
+    val originalTokenCount: Int? = null
 )
 
 data class AgentJsonResponse(
