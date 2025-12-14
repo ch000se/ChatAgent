@@ -1,5 +1,8 @@
 package com.example.chatagent.data.repository
 
+import com.example.chatagent.data.local.dao.MessageDao
+import com.example.chatagent.data.mapper.toDomain
+import com.example.chatagent.data.mapper.toEntity
 import com.example.chatagent.data.remote.api.ChatApiService
 import com.example.chatagent.data.remote.dto.ChatRequest
 import com.example.chatagent.data.remote.dto.MessageDto
@@ -8,18 +11,34 @@ import com.example.chatagent.domain.model.SummarizationConfig
 import com.example.chatagent.domain.model.SummarizationStats
 import com.example.chatagent.domain.model.TokenUsage
 import com.example.chatagent.domain.repository.ChatRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ChatRepositoryImpl @Inject constructor(
-    private val apiService: ChatApiService
+    private val apiService: ChatApiService,
+    private val messageDao: MessageDao
 ) : ChatRepository {
 
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val conversationHistory = mutableListOf<MessageDto>()
+
+    init {
+        // Load messages from database on initialization
+        repositoryScope.launch {
+            loadMessagesFromDatabase()
+        }
+    }
 
     private val maxHistoryMessages = 20
 
@@ -102,8 +121,22 @@ class ChatRepositoryImpl @Inject constructor(
     override fun getSummarizationStats(): StateFlow<SummarizationStats> =
         _summarizationStats.asStateFlow()
 
+    private suspend fun loadMessagesFromDatabase() {
+        val messages = messageDao.getAllMessages().first()
+        conversationHistory.clear()
+        conversationHistory.addAll(messages.map { entity ->
+            MessageDto(
+                role = if (entity.isFromUser) "user" else "assistant",
+                content = entity.content
+            )
+        })
+    }
+
     override fun clearConversationHistory() {
         conversationHistory.clear()
+        repositoryScope.launch {
+            messageDao.deleteAllMessages()
+        }
     }
 
     override suspend fun sendMessage(message: String): Result<Message> = withContext(Dispatchers.IO) {
@@ -112,6 +145,15 @@ class ChatRepositoryImpl @Inject constructor(
             if (shouldSummarize()) {
                 compressConversationHistory()
             }
+
+            // Save user message to database
+            val userMessageEntity = Message(
+                id = UUID.randomUUID().toString(),
+                content = message,
+                isFromUser = true,
+                timestamp = System.currentTimeMillis()
+            )
+            messageDao.insertMessage(userMessageEntity.toEntity())
 
             conversationHistory.add(
                 MessageDto(role = "user", content = message)
@@ -155,6 +197,9 @@ class ChatRepositoryImpl @Inject constructor(
                 jsonResponse = null,
                 tokenUsage = tokenUsage
             )
+
+            // Save assistant message to database
+            messageDao.insertMessage(agentMessage.toEntity())
 
             Result.success(agentMessage)
         } catch (e: Exception) {
@@ -200,10 +245,36 @@ class ChatRepositoryImpl @Inject constructor(
                 content = "[SUMMARY of ${messagesToSummarize.size} messages]\n\n$summaryText"
             )
 
-            // Replace old messages with summary
+            // Replace old messages with summary in memory
             conversationHistory.clear()
             conversationHistory.add(summaryMessage)
             conversationHistory.addAll(messagesToKeep)
+
+            // Update database: delete all messages and insert new ones
+            messageDao.deleteAllMessages()
+
+            // Insert summary message
+            val summaryEntity = Message(
+                id = UUID.randomUUID().toString(),
+                content = summaryMessage.content,
+                isFromUser = false,
+                timestamp = System.currentTimeMillis(),
+                isSummary = true,
+                summarizedMessageCount = messagesToSummarize.size,
+                originalTokenCount = originalTokenCount
+            )
+            messageDao.insertMessage(summaryEntity.toEntity())
+
+            // Insert remaining messages (approximating their original data)
+            messagesToKeep.forEach { msg ->
+                val msgEntity = Message(
+                    id = UUID.randomUUID().toString(),
+                    content = msg.content,
+                    isFromUser = msg.role == "user",
+                    timestamp = System.currentTimeMillis()
+                )
+                messageDao.insertMessage(msgEntity.toEntity())
+            }
 
             // Update stats
             val tokensSaved = originalTokenCount - summaryTokens
