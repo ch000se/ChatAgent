@@ -1,0 +1,7 @@
+Summary (497 chars):
+
+🔍 Search results for: latest kotlin and android feature December 2025
+
+📄 Kotlin 2.3.0 Released | The Kotlin Blog - The JetBrains Blog
+🔗 //duckduckgo.com/l/?uddg=https%3A%2F%2Fblog.jetbrains.com%2Fkotlin%2F2025%2F12%2Fkotlin%2D2%2D3%2D0%2Dreleased%2F&rut=1394b7e4846e1a104e8b8686eb0e572f73915d1430d86ccd4447fe38671a2d9d
+📝 TheKotlinplugin is distributed as a bundled plugin in IntelliJ IDEA andAndroidStudio. To update to the newKotlinversion, change theKotlinversion to 2.3.0 in your build scripts.

@@ -2,6 +2,8 @@ package com.example.chatagent.di
 
 import com.example.chatagent.BuildConfig
 import com.example.chatagent.data.remote.api.ChatApiService
+import com.example.chatagent.data.remote.client.SseResponseConverterFactory
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,6 +47,12 @@ object NetworkModule {
                 HttpLoggingInterceptor.Level.NONE
             }
         }
+    }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return Gson()
     }
 
     @Provides
@@ -151,5 +159,47 @@ object NetworkModule {
         @HuggingFaceRetrofit retrofit: Retrofit
     ): com.example.chatagent.data.remote.api.HuggingFaceApiService {
         return retrofit.create(com.example.chatagent.data.remote.api.HuggingFaceApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @McpRetrofit
+    fun provideMcpRetrofit(loggingInterceptor: HttpLoggingInterceptor, gson: Gson): Retrofit {
+        val clientBuilder = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+
+        if (BuildConfig.DEBUG) {
+            try {
+                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+
+                clientBuilder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                clientBuilder.hostnameVerifier { _, _ -> true }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return Retrofit.Builder()
+            .baseUrl("http://localhost/")
+            .client(clientBuilder.build())
+            .addConverterFactory(SseResponseConverterFactory(gson))
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMcpApiService(@McpRetrofit retrofit: Retrofit): com.example.chatagent.data.remote.api.McpApiService {
+        return retrofit.create(com.example.chatagent.data.remote.api.McpApiService::class.java)
     }
 }

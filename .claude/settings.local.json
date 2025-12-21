@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mvnrepository.com)",
+      "Bash(./gradlew:*)",
+      "WebFetch(domain:mcp-install-instructions.alpic.cloud)",
+      "Bash(findstr:*)",
+      "Bash(ls:*)",
+      "Bash(adb shell:*)",
+      "Bash(curl:*)",
+      "Bash(ipconfig:*)",
+      "Bash(gradlew.bat assembleDebug:*)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug --console=plain 2>&1 | findstr /i /c:error /c:failed /c:success\")",
+      "Bash(dir:*)"
+    ]
+  }
+}

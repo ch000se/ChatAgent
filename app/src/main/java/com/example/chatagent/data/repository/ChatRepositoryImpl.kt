@@ -1,10 +1,14 @@
 package com.example.chatagent.data.repository
 
+import android.util.Log
 import com.example.chatagent.data.local.dao.MessageDao
 import com.example.chatagent.data.mapper.toDomain
 import com.example.chatagent.data.mapper.toEntity
 import com.example.chatagent.data.remote.api.ChatApiService
+import com.example.chatagent.data.remote.client.McpClient
 import com.example.chatagent.data.remote.dto.ChatRequest
+import com.example.chatagent.data.remote.dto.ClaudeToolDto
+import com.example.chatagent.data.remote.dto.ContentBlock
 import com.example.chatagent.data.remote.dto.MessageDto
 import com.example.chatagent.domain.model.Message
 import com.example.chatagent.domain.model.SummarizationConfig
@@ -27,8 +31,11 @@ import javax.inject.Singleton
 @Singleton
 class ChatRepositoryImpl @Inject constructor(
     private val apiService: ChatApiService,
-    private val messageDao: MessageDao
+    private val messageDao: MessageDao,
+    private val mcpClient: McpClient
 ) : ChatRepository {
+
+    private val TAG = "ChatRepositoryImpl"
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val conversationHistory = mutableListOf<MessageDto>()
@@ -139,6 +146,41 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    private suspend fun getAvailableMcpTools(): List<ClaudeToolDto> {
+        return try {
+            val connectionState = mcpClient.connectionState.value
+            if (connectionState !is McpClient.ConnectionState.Connected) {
+                return emptyList()
+            }
+
+            mcpClient.tools.value.map { mcpTool ->
+                ClaudeToolDto(
+                    name = mcpTool.name,
+                    description = mcpTool.description ?: "No description",
+                    inputSchema = mcpTool.inputSchema.toMap()
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get MCP tools", e)
+            emptyList()
+        }
+    }
+
+    private fun com.example.chatagent.data.remote.dto.ToolInputSchema.toMap(): Map<String, Any> {
+        val map = mutableMapOf<String, Any>("type" to this.type)
+        this.properties?.let { map["properties"] = it }
+        this.required?.let { map["required"] = it }
+        return map
+    }
+
+    private fun contentToString(content: Any): String {
+        return when (content) {
+            is String -> content
+            is List<*> -> content.joinToString("\n") { it.toString() }
+            else -> content.toString()
+        }
+    }
+
     override suspend fun sendMessage(message: String): Result<Message> = withContext(Dispatchers.IO) {
         try {
             // Check if we should compress before adding new message
@@ -159,50 +201,129 @@ class ChatRepositoryImpl @Inject constructor(
                 MessageDto(role = "user", content = message)
             )
 
-            val limitedHistory = if (conversationHistory.size > maxHistoryMessages) {
-                conversationHistory.takeLast(maxHistoryMessages)
-            } else {
-                conversationHistory.toList()
-            }
+            // Get available MCP tools
+            val mcpTools = getAvailableMcpTools()
+            Log.d(TAG, "Available MCP tools: ${mcpTools.size}")
 
-            val request = ChatRequest(
-                system = _currentSystemPrompt.value,
-                messages = limitedHistory,
-                maxTokens = 2048,
-                temperature = _currentTemperature.value
-            )
+            var finalResponse: Message? = null
+            var continueLoop = true
+            var loopCount = 0
+            val maxLoops = 5
 
-            val response = apiService.sendMessage(request)
+            while (continueLoop && loopCount < maxLoops) {
+                loopCount++
 
-            val assistantMessage = response.content.firstOrNull()?.text ?: "No response"
+                val limitedHistory = if (conversationHistory.size > maxHistoryMessages) {
+                    conversationHistory.takeLast(maxHistoryMessages)
+                } else {
+                    conversationHistory.toList()
+                }
 
-            conversationHistory.add(
-                MessageDto(role = "assistant", content = assistantMessage)
-            )
-
-            val tokenUsage = response.usage?.let { usage ->
-                TokenUsage(
-                    inputTokens = usage.inputTokens,
-                    outputTokens = usage.outputTokens,
-                    totalTokens = usage.inputTokens + usage.outputTokens,
-                    cacheCreationInputTokens = usage.cacheCreationInputTokens,
-                    cacheReadInputTokens = usage.cacheReadInputTokens
+                val request = ChatRequest(
+                    // system = _currentSystemPrompt.value,
+                    system = null,
+                    messages = limitedHistory,
+                    maxTokens = 2048,
+                    temperature = _currentTemperature.value,
+                    tools = if (mcpTools.isNotEmpty()) mcpTools else null
                 )
+
+                val response = apiService.sendMessage(request)
+
+                // Check if response contains tool use
+                val toolUseBlocks = response.content.filter { it.type == "tool_use" }
+
+                if (toolUseBlocks.isNotEmpty()) {
+                    Log.d(TAG, "Found ${toolUseBlocks.size} tool use blocks")
+
+                    // Add assistant's tool use response to history
+                    conversationHistory.add(
+                        MessageDto(role = "assistant", content = response.content)
+                    )
+
+                    // Execute tools and collect results
+                    val toolResults = mutableListOf<ContentBlock>()
+                    toolUseBlocks.forEach { toolUse ->
+                        val toolName = toolUse.name ?: return@forEach
+                        val toolInput = toolUse.input ?: emptyMap()
+                        val toolUseId = toolUse.id ?: return@forEach
+
+                        Log.d(TAG, "Executing tool: $toolName with input: $toolInput")
+
+                        val result = mcpClient.callTool(toolName, toolInput)
+                        result.fold(
+                            onSuccess = { callResult ->
+                                val resultText = callResult.content.joinToString("\n") {
+                                    it.text ?: ""
+                                }
+                                toolResults.add(
+                                    ContentBlock(
+                                        type = "tool_result",
+                                        toolUseId = toolUseId,
+                                        content = resultText
+                                    )
+                                )
+                                Log.d(TAG, "Tool $toolName executed successfully")
+                            },
+                            onFailure = { error ->
+                                toolResults.add(
+                                    ContentBlock(
+                                        type = "tool_result",
+                                        toolUseId = toolUseId,
+                                        content = "Error: ${error.message}"
+                                    )
+                                )
+                                Log.e(TAG, "Tool $toolName failed", error)
+                            }
+                        )
+                    }
+
+                    // Add tool results to conversation
+                    conversationHistory.add(
+                        MessageDto(role = "user", content = toolResults)
+                    )
+
+                    // Continue loop to get final response from Claude
+                } else {
+                    // No tool use, this is the final response
+                    val assistantMessage = response.content.firstOrNull()?.text ?: "No response"
+
+                    conversationHistory.add(
+                        MessageDto(role = "assistant", content = assistantMessage)
+                    )
+
+                    val tokenUsage = response.usage?.let { usage ->
+                        TokenUsage(
+                            inputTokens = usage.inputTokens,
+                            outputTokens = usage.outputTokens,
+                            totalTokens = usage.inputTokens + usage.outputTokens,
+                            cacheCreationInputTokens = usage.cacheCreationInputTokens,
+                            cacheReadInputTokens = usage.cacheReadInputTokens
+                        )
+                    }
+
+                    finalResponse = Message(
+                        id = response.id,
+                        content = assistantMessage,
+                        isFromUser = false,
+                        jsonResponse = null,
+                        tokenUsage = tokenUsage
+                    )
+
+                    continueLoop = false
+                }
             }
 
-            val agentMessage = Message(
-                id = response.id,
-                content = assistantMessage,
-                isFromUser = false,
-                jsonResponse = null,
-                tokenUsage = tokenUsage
-            )
+            if (finalResponse == null) {
+                return@withContext Result.failure(Exception("Max tool use loops exceeded"))
+            }
 
             // Save assistant message to database
-            messageDao.insertMessage(agentMessage.toEntity())
+            messageDao.insertMessage(finalResponse.toEntity())
 
-            Result.success(agentMessage)
+            Result.success(finalResponse)
         } catch (e: Exception) {
+            Log.e(TAG, "Error in sendMessage", e)
             Result.failure(e)
         }
     }
@@ -224,7 +345,9 @@ class ChatRepositoryImpl @Inject constructor(
             val messagesToKeep = conversationHistory.drop(splitIndex)
 
             // Calculate original token count (estimate: ~4 chars = 1 token)
-            val originalTokenCount = messagesToSummarize.sumOf { it.content.length / 4 }
+            val originalTokenCount = messagesToSummarize.sumOf {
+                contentToString(it.content).length / 4
+            }
 
             // Create summarization request
             val summarizationPrompt = buildSummarizationPrompt(messagesToSummarize)
@@ -256,7 +379,7 @@ class ChatRepositoryImpl @Inject constructor(
             // Insert summary message
             val summaryEntity = Message(
                 id = UUID.randomUUID().toString(),
-                content = summaryMessage.content,
+                content = contentToString(summaryMessage.content),
                 isFromUser = false,
                 timestamp = System.currentTimeMillis(),
                 isSummary = true,
@@ -269,7 +392,7 @@ class ChatRepositoryImpl @Inject constructor(
             messagesToKeep.forEach { msg ->
                 val msgEntity = Message(
                     id = UUID.randomUUID().toString(),
-                    content = msg.content,
+                    content = contentToString(msg.content),
                     isFromUser = msg.role == "user",
                     timestamp = System.currentTimeMillis()
                 )
@@ -294,7 +417,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     private fun buildSummarizationPrompt(messages: List<MessageDto>): String {
         val conversationText = messages.joinToString("\n\n") { msg ->
-            "${msg.role.uppercase()}: ${msg.content}"
+            "${msg.role.uppercase()}: ${contentToString(msg.content)}"
         }
 
         return """

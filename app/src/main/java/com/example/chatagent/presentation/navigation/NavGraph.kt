@@ -6,6 +6,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.chatagent.presentation.benchmark.BenchmarkScreen
 import com.example.chatagent.presentation.chat.ChatScreen
+import com.example.chatagent.presentation.mcp.McpScreen
+import com.example.chatagent.presentation.pipeline.PipelineScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -17,6 +19,12 @@ fun NavGraph(navController: NavHostController) {
             ChatScreen(
                 onNavigateToBenchmark = {
                     navController.navigate(Screen.Benchmark.route)
+                },
+                onNavigateToMcp = {
+                    navController.navigate(Screen.Mcp.route)
+                },
+                onNavigateToPipeline = {
+                    navController.navigate(Screen.Pipeline.route)
                 }
             )
         }
@@ -28,10 +36,24 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(route = Screen.Mcp.route) {
+            McpScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(route = Screen.Pipeline.route) {
+            PipelineScreen()
+        }
     }
 }
 
 sealed class Screen(val route: String) {
     data object Chat : Screen("chat")
     data object Benchmark : Screen("benchmark")
+    data object Mcp : Screen("mcp")
+    data object Pipeline : Screen("pipeline")
 }

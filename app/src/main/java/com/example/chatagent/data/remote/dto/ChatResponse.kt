@@ -30,7 +30,16 @@ data class ContentDto(
     val type: String,
 
     @SerializedName("text")
-    val text: String
+    val text: String? = null,
+
+    @SerializedName("id")
+    val id: String? = null,
+
+    @SerializedName("name")
+    val name: String? = null,
+
+    @SerializedName("input")
+    val input: Map<String, Any>? = null
 )
 
 data class UsageDto(
