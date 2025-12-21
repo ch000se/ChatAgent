@@ -13,7 +13,10 @@
       "Bash(ipconfig:*)",
       "Bash(gradlew.bat assembleDebug:*)",
       "Bash(cmd.exe /c \"gradlew.bat assembleDebug --console=plain 2>&1 | findstr /i /c:error /c:failed /c:success\")",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(adb devices:*)",
+      "Bash(cmd.exe /c \"adb devices\")",
+      "Bash(rm:*)"
     ]
   }
 }
