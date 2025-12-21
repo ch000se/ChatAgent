@@ -12,6 +12,20 @@ data class McpServerInfo(
 object McpServers {
     val allServers = listOf(
         McpServerInfo(
+            name = "ADB Device Control (Emulator)",
+            url = "http://10.0.2.2:3002/mcp",
+            description = "🤖 Control Android device via ADB - Run: python adb_mcp_server.py",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
+            name = "ADB Device Control (LAN)",
+            url = "http://192.168.0.100:3002/mcp",
+            description = "🤖 Control Android device via ADB from LAN",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
             name = "Kiwi.com Flight Search",
             url = "https://mcp.kiwi.com",
             description = "✅ FREE - Search and book flights using Kiwi.com search engine",
