@@ -13,3 +13,7 @@ annotation class HuggingFaceRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class McpRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class EmbeddingRetrofit

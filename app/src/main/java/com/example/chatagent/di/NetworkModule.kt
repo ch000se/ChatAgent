@@ -202,4 +202,58 @@ object NetworkModule {
     fun provideMcpApiService(@McpRetrofit retrofit: Retrofit): com.example.chatagent.data.remote.api.McpApiService {
         return retrofit.create(com.example.chatagent.data.remote.api.McpApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    @EmbeddingRetrofit
+    fun provideEmbeddingRetrofit(): Retrofit {
+        val clientBuilder = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer ${BuildConfig.HF_API_KEY}")
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+
+        if (BuildConfig.DEBUG) {
+            try {
+                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+
+                clientBuilder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                clientBuilder.hostnameVerifier { _, _ -> true }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        val client = clientBuilder.build()
+
+        return Retrofit.Builder()
+            .baseUrl("https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmbeddingApiService(
+        @EmbeddingRetrofit retrofit: Retrofit
+    ): com.example.chatagent.data.remote.api.EmbeddingApiService {
+        return retrofit.create(com.example.chatagent.data.remote.api.EmbeddingApiService::class.java)
+    }
 }
