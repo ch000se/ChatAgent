@@ -3,6 +3,8 @@ package com.example.chatagent.di
 import android.content.Context
 import androidx.room.Room
 import com.example.chatagent.data.local.ChatDatabase
+import com.example.chatagent.data.local.dao.DocumentDao
+import com.example.chatagent.data.local.dao.EmbeddingDao
 import com.example.chatagent.data.local.dao.MessageDao
 import dagger.Module
 import dagger.Provides
@@ -33,5 +35,17 @@ object DatabaseModule {
     @Singleton
     fun provideMessageDao(database: ChatDatabase): MessageDao {
         return database.messageDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDocumentDao(database: ChatDatabase): DocumentDao {
+        return database.documentDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmbeddingDao(database: ChatDatabase): EmbeddingDao {
+        return database.embeddingDao()
     }
 }

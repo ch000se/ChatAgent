@@ -21,12 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Cable
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -71,6 +72,7 @@ fun ChatScreen(
     onNavigateToBenchmark: () -> Unit = {},
     onNavigateToMcp: () -> Unit = {},
     onNavigateToPipeline: () -> Unit = {},
+    onNavigateToDocuments: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -120,6 +122,12 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = onNavigateToDocuments) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = "Document Indexing"
+                        )
+                    }
                     IconButton(onClick = onNavigateToPipeline) {
                         Icon(
                             imageVector = Icons.Default.AccountTree,

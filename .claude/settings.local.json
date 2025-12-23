@@ -16,7 +16,11 @@
       "Bash(dir:*)",
       "Bash(adb devices:*)",
       "Bash(cmd.exe /c \"adb devices\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(D:AndroidStudioProjectsChatAgentgradlew.bat assembleDebug)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug --console=plain 2>&1\")"
     ]
   }
 }
