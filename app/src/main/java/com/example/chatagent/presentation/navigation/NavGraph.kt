@@ -9,6 +9,7 @@ import com.example.chatagent.presentation.chat.ChatScreen
 import com.example.chatagent.presentation.documents.DocumentScreen
 import com.example.chatagent.presentation.mcp.McpScreen
 import com.example.chatagent.presentation.pipeline.PipelineScreen
+import com.example.chatagent.presentation.rag.RagComparisonScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -29,6 +30,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToDocuments = {
                     navController.navigate(Screen.Documents.route)
+                },
+                onNavigateToRagComparison = {
+                    navController.navigate(Screen.RagComparison.route)
                 }
             )
         }
@@ -56,6 +60,14 @@ fun NavGraph(navController: NavHostController) {
         composable(route = Screen.Documents.route) {
             DocumentScreen()
         }
+
+        composable(route = Screen.RagComparison.route) {
+            RagComparisonScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -65,4 +77,5 @@ sealed class Screen(val route: String) {
     data object Mcp : Screen("mcp")
     data object Pipeline : Screen("pipeline")
     data object Documents : Screen("documents")
+    data object RagComparison : Screen("rag_comparison")
 }

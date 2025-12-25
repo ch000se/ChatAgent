@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -73,6 +74,7 @@ fun ChatScreen(
     onNavigateToMcp: () -> Unit = {},
     onNavigateToPipeline: () -> Unit = {},
     onNavigateToDocuments: () -> Unit = {},
+    onNavigateToRagComparison: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -122,6 +124,12 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = onNavigateToRagComparison) {
+                        Icon(
+                            imageVector = Icons.Default.Science,
+                            contentDescription = "RAG Comparison Demo"
+                        )
+                    }
                     IconButton(onClick = onNavigateToDocuments) {
                         Icon(
                             imageVector = Icons.Default.Description,
