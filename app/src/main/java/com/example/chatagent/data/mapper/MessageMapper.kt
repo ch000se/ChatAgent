@@ -2,6 +2,7 @@ package com.example.chatagent.data.mapper
 
 import com.example.chatagent.data.local.entity.MessageEntity
 import com.example.chatagent.domain.model.AgentJsonResponse
+import com.example.chatagent.domain.model.DocumentSearchResult
 import com.example.chatagent.domain.model.Message
 import com.example.chatagent.domain.model.TokenUsage
 import com.google.gson.Gson
@@ -33,7 +34,15 @@ fun MessageEntity.toDomain(): Message {
         },
         isSummary = isSummary,
         summarizedMessageCount = summarizedMessageCount,
-        originalTokenCount = originalTokenCount
+        originalTokenCount = originalTokenCount,
+        sources = sourcesJson?.let {
+            try {
+                val type = object : TypeToken<List<DocumentSearchResult>>() {}.type
+                gson.fromJson(it, type)
+            } catch (e: Exception) {
+                null
+            }
+        }
     )
 }
 
@@ -47,6 +56,7 @@ fun Message.toEntity(): MessageEntity {
         tokenUsageJson = tokenUsage?.let { gson.toJson(it) },
         isSummary = isSummary,
         summarizedMessageCount = summarizedMessageCount,
-        originalTokenCount = originalTokenCount
+        originalTokenCount = originalTokenCount,
+        sourcesJson = sources?.let { gson.toJson(it) }
     )
 }

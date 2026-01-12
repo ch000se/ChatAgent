@@ -139,6 +139,12 @@ class ChatRepositoryImpl @Inject constructor(
         })
     }
 
+    override fun getAllMessages(): Flow<List<Message>> {
+        return messageDao.getAllMessages().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     override fun clearConversationHistory() {
         conversationHistory.clear()
         repositoryScope.launch {

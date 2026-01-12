@@ -14,5 +14,6 @@ data class MessageEntity(
     val tokenUsageJson: String? = null,
     val isSummary: Boolean = false,
     val summarizedMessageCount: Int? = null,
-    val originalTokenCount: Int? = null
+    val originalTokenCount: Int? = null,
+    val sourcesJson: String? = null
 )
