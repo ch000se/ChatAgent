@@ -11,7 +11,8 @@ data class Message(
     val tokenUsage: TokenUsage? = null,
     val isSummary: Boolean = false,
     val summarizedMessageCount: Int? = null,
-    val originalTokenCount: Int? = null
+    val originalTokenCount: Int? = null,
+    val sources: List<DocumentSearchResult>? = null
 )
 
 data class AgentJsonResponse(
