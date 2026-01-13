@@ -22,7 +22,12 @@
       "Bash(D:AndroidStudioProjectsChatAgentgradlew.bat assembleDebug)",
       "Bash(cmd.exe /c \"gradlew.bat assembleDebug --console=plain 2>&1\")",
       "Bash(cmd.exe /c \"gradlew.bat assembleDebug --console=plain 2>&1 | findstr /i /c:error /c:failed /c:success /c:BUILD\")",
-      "Bash(cmd.exe:*)"
+      "Bash(cmd.exe:*)",
+      "Bash(./gradlew.bat assembleDebug)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /F /PID 21124 /PID 5112 /PID 35536 /PID 34312\")",
+      "Bash(ping:*)"
     ]
   }
 }

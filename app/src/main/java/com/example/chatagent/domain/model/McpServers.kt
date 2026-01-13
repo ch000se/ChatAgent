@@ -12,6 +12,34 @@ data class McpServerInfo(
 object McpServers {
     val allServers = listOf(
         McpServerInfo(
+            name = "Git Operations (Emulator)",
+            url = "http://10.0.2.2:3002",
+            description = "🔀 Git commands - Run: mcp_servers/start_git.bat",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
+            name = "Git Operations (LAN)",
+            url = "http://192.168.0.100:3002",
+            description = "🔀 Git commands from physical device",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
+            name = "Web Search (Emulator)",
+            url = "http://10.0.2.2:3000",
+            description = "🌐 Real web search - Run: mcp_servers/start_real_search.bat",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
+            name = "File System (Emulator)",
+            url = "http://10.0.2.2:3001",
+            description = "💾 File operations - Run: mcp_servers/start_filesystem.bat",
+            requiresAuth = false,
+            protocol = "HTTP"
+        ),
+        McpServerInfo(
             name = "ADB Device Control (Emulator)",
             url = "http://10.0.2.2:3002/mcp",
             description = "🤖 Control Android device via ADB - Run: python adb_mcp_server.py",

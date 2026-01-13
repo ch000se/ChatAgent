@@ -222,6 +222,16 @@ class DocumentRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun getDocumentByFileName(fileName: String): Document? =
+        withContext(Dispatchers.IO) {
+            try {
+                documentDao.getDocumentByFileName(fileName)?.toDomain()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting document by filename", e)
+                null
+            }
+        }
+
     override suspend fun getAllDocuments(): Flow<List<Document>> {
         return documentDao.getAllDocuments().map { entities ->
             entities.map { it.toDomain() }

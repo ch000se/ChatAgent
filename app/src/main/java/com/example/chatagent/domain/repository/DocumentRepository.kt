@@ -11,6 +11,7 @@ interface DocumentRepository {
     suspend fun indexDocument(documentId: String): Flow<IndexingProgress>
     suspend fun searchDocuments(query: String, topK: Int = 5): Result<List<DocumentSearchResult>>
     suspend fun getDocumentById(documentId: String): Result<Document?>
+    suspend fun getDocumentByFileName(fileName: String): Document?
     suspend fun getAllDocuments(): Flow<List<Document>>
     suspend fun getIndexedDocuments(): Flow<List<Document>>
     suspend fun deleteDocument(documentId: String): Result<Unit>

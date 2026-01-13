@@ -19,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val sendMessageUseCase: SendMessageUseCase,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val commandDispatcher: com.example.chatagent.domain.command.CommandDispatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -61,6 +62,14 @@ class ChatViewModel @Inject constructor(
         val messageText = _uiState.value.inputText.trim()
         if (messageText.isEmpty()) return
 
+        // Check if input is a command
+        val command = com.example.chatagent.domain.util.CommandParser.parse(messageText)
+        if (command != null) {
+            handleCommand(command, messageText)
+            return
+        }
+
+        // Regular message handling
         val userMessage = Message(
             id = UUID.randomUUID().toString(),
             content = messageText,
@@ -106,6 +115,53 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    private fun handleCommand(command: com.example.chatagent.domain.model.Command, rawInput: String) {
+        val userMessage = Message(
+            id = UUID.randomUUID().toString(),
+            content = rawInput,
+            isFromUser = true,
+            isCommand = true
+        )
+
+        _uiState.update {
+            it.copy(
+                messages = it.messages + userMessage,
+                inputText = "",
+                isLoading = true,
+                error = null
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                val result = commandDispatcher.dispatch(command)
+
+                val commandResponse = Message(
+                    id = UUID.randomUUID().toString(),
+                    content = result.content,
+                    isFromUser = false,
+                    isCommand = true,
+                    sources = result.metadata?.sources,
+                    commandMetadata = result.metadata
+                )
+
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        messages = currentState.messages + commandResponse,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Command execution failed"
+                    )
+                }
+            }
         }
     }
 
