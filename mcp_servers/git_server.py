@@ -16,29 +16,35 @@ CORS(app)
 # Git repository path (current project)
 REPO_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def execute_git_command(*args):
+def execute_git_command(*args, timeout=10):
     """Execute git command and return output"""
     try:
         cmd = ['git'] + list(args)
+        print(f"[DEBUG] Executing: {' '.join(cmd)}")
         result = subprocess.run(
             cmd,
             cwd=REPO_PATH,
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=timeout
         )
 
         if result.returncode == 0:
+            output = result.stdout.strip() if result.stdout else ''
+            print(f"[DEBUG] Success: {len(output)} chars output")
             return {
                 'success': True,
-                'output': result.stdout.strip(),
+                'output': output,
                 'error': None
             }
         else:
+            output = result.stdout.strip() if result.stdout else ''
+            error = result.stderr.strip() if result.stderr else ''
+            print(f"[DEBUG] Failed: return code {result.returncode}, error: {error[:100]}")
             return {
                 'success': False,
-                'output': result.stdout.strip(),
-                'error': result.stderr.strip()
+                'output': output,
+                'error': error
             }
     except subprocess.TimeoutExpired:
         return {
@@ -162,6 +168,83 @@ def handle_mcp_request():
                             },
                             "required": ["command", "args"]
                         }
+                    },
+                    {
+                        "name": "git_diff_unified",
+                        "description": "Get unified diff between two commits/branches for PR review",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "base": {
+                                    "type": "string",
+                                    "description": "Base commit/branch (e.g., 'origin/master')"
+                                },
+                                "head": {
+                                    "type": "string",
+                                    "description": "Head commit/branch (e.g., 'HEAD')"
+                                },
+                                "context_lines": {
+                                    "type": "number",
+                                    "description": "Number of context lines (default: 3)",
+                                    "default": 3
+                                }
+                            },
+                            "required": ["base", "head"]
+                        }
+                    },
+                    {
+                        "name": "git_diff_files",
+                        "description": "List files changed between two commits with status",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "base": {
+                                    "type": "string",
+                                    "description": "Base commit/branch"
+                                },
+                                "head": {
+                                    "type": "string",
+                                    "description": "Head commit/branch"
+                                }
+                            },
+                            "required": ["base", "head"]
+                        }
+                    },
+                    {
+                        "name": "git_show_file",
+                        "description": "Show file content at specific commit",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "commit": {
+                                    "type": "string",
+                                    "description": "Commit reference"
+                                },
+                                "filepath": {
+                                    "type": "string",
+                                    "description": "Path to file"
+                                }
+                            },
+                            "required": ["commit", "filepath"]
+                        }
+                    },
+                    {
+                        "name": "git_pr_context",
+                        "description": "Get PR context metadata (commit count, merge base, etc.)",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "base_branch": {
+                                    "type": "string",
+                                    "description": "Base branch name"
+                                },
+                                "head_branch": {
+                                    "type": "string",
+                                    "description": "Head branch name"
+                                }
+                            },
+                            "required": ["base_branch", "head_branch"]
+                        }
                     }
                 ]
             }
@@ -209,6 +292,62 @@ def handle_mcp_request():
                 })
 
             result = execute_git_command(*args)
+
+        elif tool_name == 'git_diff_unified':
+            base = arguments.get('base')
+            head = arguments.get('head')
+            context_lines = arguments.get('context_lines', 3)
+
+            # Use .. for direct diff (better for PR reviews)
+            # Use longer timeout for large diffs
+            result = execute_git_command('diff', f'-U{context_lines}', f'{base}..{head}', timeout=30)
+
+        elif tool_name == 'git_diff_files':
+            base = arguments.get('base')
+            head = arguments.get('head')
+
+            # Use .. for direct diff
+            result = execute_git_command('diff', '--name-status', f'{base}..{head}')
+
+        elif tool_name == 'git_show_file':
+            commit = arguments.get('commit')
+            filepath = arguments.get('filepath')
+
+            result = execute_git_command('show', f'{commit}:{filepath}')
+
+        elif tool_name == 'git_pr_context':
+            base_branch = arguments.get('base_branch')
+            head_branch = arguments.get('head_branch')
+
+            # Get merge base
+            merge_base_result = execute_git_command('merge-base', base_branch, head_branch)
+
+            if not merge_base_result['success']:
+                result = merge_base_result
+            else:
+                merge_base = merge_base_result['output'].strip()
+
+                # Get commit count
+                commit_count_result = execute_git_command('rev-list', '--count', f'{base_branch}..{head_branch}')
+                commit_count = commit_count_result['output'].strip() if commit_count_result['success'] else 'N/A'
+
+                # Get files changed count
+                files_changed_result = execute_git_command('diff', '--name-only', f'{base_branch}..{head_branch}')
+                files_count = len(files_changed_result['output'].strip().split('\n')) if files_changed_result['success'] and files_changed_result['output'] else 0
+
+                # Build context info
+                context_info = f"Merge Base: {merge_base}\n"
+                context_info += f"Commits: {commit_count}\n"
+                context_info += f"Files Changed: {files_count}\n"
+                context_info += f"Base Branch: {base_branch}\n"
+                context_info += f"Head Branch: {head_branch}"
+
+                result = {
+                    'success': True,
+                    'output': context_info,
+                    'error': None
+                }
+
         else:
             return jsonify({
                 "jsonrpc": "2.0",
