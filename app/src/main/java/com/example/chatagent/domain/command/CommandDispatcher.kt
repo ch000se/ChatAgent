@@ -1,0 +1,59 @@
+package com.example.chatagent.domain.command
+
+import com.example.chatagent.domain.model.Command
+import com.example.chatagent.domain.model.CommandMetadata
+import com.example.chatagent.domain.model.CommandResult
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class CommandDispatcher @Inject constructor(
+    private val helpHandler: HelpCommandHandler,
+    private val codeHandler: CodeSearchCommandHandler,
+    private val docsHandler: DocsCommandHandler,
+    private val gitHandler: GitCommandHandler,
+    private val projectInfoHandler: ProjectInfoCommandHandler
+) {
+
+    suspend fun dispatch(command: Command): CommandResult {
+        return when (command) {
+            is Command.Help -> helpHandler.handle(command)
+            is Command.Code -> codeHandler.handle(command)
+            is Command.Docs -> docsHandler.handle(command)
+            is Command.Git -> gitHandler.handle(command)
+            is Command.ProjectInfo -> projectInfoHandler.handle(command)
+            is Command.Unknown -> handleUnknownCommand(command)
+        }
+    }
+
+    private fun handleUnknownCommand(command: Command.Unknown): CommandResult {
+        return CommandResult(
+            command = command,
+            content = """
+                ## Невідома команда: ${command.rawInput}
+
+                📋 Доступні команди:
+                - `/help [запит]` - AI асистент з RAG пошуком документації
+                - `/code <запит>` - Пошук фрагментів коду
+                - `/docs <запит>` - Пошук тільки в документації
+                - `/git [status|log|diff|branch]` - Git операції через MCP
+                - `/project` - Інформація про проект та архітектуру
+
+                💡 Приклади:
+                - `/help як працює RAG`
+                - `/code ChatRepository`
+                - `/docs quickstart`
+                - `/git status`
+                - `/project`
+            """.trimIndent(),
+            success = false,
+            error = "Unknown command",
+            metadata = CommandMetadata(
+                sources = null,
+                executionTimeMs = 0,
+                commandType = "unknown",
+                matchCount = 0
+            )
+        )
+    }
+}

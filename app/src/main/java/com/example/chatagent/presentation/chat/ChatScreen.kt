@@ -30,7 +30,9 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -222,6 +224,12 @@ fun ChatScreen(
                 summarizationCount = uiState.totalSummarizations,
                 tokensSaved = uiState.tokensSaved,
                 compressionRatio = uiState.compressionRatio
+            )
+
+            CommandSuggestionChips(
+                onCommandClick = { command ->
+                    viewModel.onInputTextChanged(command)
+                }
             )
 
             LazyColumn(
@@ -445,11 +453,18 @@ fun MessageBubble(message: Message) {
             ),
             colors = CardDefaults.cardColors(
                 containerColor = when {
+                    message.isCommand && !message.isFromUser -> MaterialTheme.colorScheme.surfaceVariant
                     message.isSummary -> MaterialTheme.colorScheme.tertiaryContainer
                     message.isFromUser -> MaterialTheme.colorScheme.primaryContainer
                     else -> MaterialTheme.colorScheme.secondaryContainer
                 }
-            )
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (message.isCommand && !message.isFromUser) 4.dp else 0.dp
+            ),
+            border = if (message.isCommand && !message.isFromUser) {
+                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            } else null
         ) {
             Column(
                 modifier = Modifier.padding(12.dp)
@@ -485,15 +500,51 @@ fun MessageBubble(message: Message) {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
+                // Command indicator
+                if (message.isCommand) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Terminal,
+                            contentDescription = "Command",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Command",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                        message.commandMetadata?.executionTimeMs?.let { time ->
+                            Text(
+                                text = "• ${time}ms",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (message.isFromUser) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                    color = when {
+                        message.isFromUser -> MaterialTheme.colorScheme.onPrimaryContainer
+                        message.isCommand -> MaterialTheme.colorScheme.onSurface
+                        else -> MaterialTheme.colorScheme.onSecondaryContainer
                     }
                 )
+
+                // Show sources if available
+                if (!message.isFromUser && message.sources != null && message.sources.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SourcesSection(sources = message.sources)
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
@@ -743,4 +794,84 @@ fun TokenTestScenariosDialog(
 private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+@Composable
+fun CommandSuggestionChips(
+    onCommandClick: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+        tonalElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Terminal,
+                contentDescription = "Commands",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = "Commands:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+
+            listOf("/help", "/code", "/docs", "/git", "/project").forEach { cmd ->
+                AssistChip(
+                    onClick = {
+                        // Don't add space for /project as it doesn't need args
+                        if (cmd == "/project") {
+                            onCommandClick(cmd)
+                        } else {
+                            onCommandClick(cmd + " ")
+                        }
+                    },
+                    label = {
+                        Text(
+                            cmd,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                    },
+                    modifier = Modifier.height(32.dp),
+                    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        labelColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SourcesSection(sources: List<com.example.chatagent.domain.model.DocumentSearchResult>) {
+    Column {
+        Text(
+            text = "Sources (${sources.size})",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.tertiary,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        sources.take(3).forEach { source ->
+            val fileName = source.document.fileName.removePrefix("PROJECT_DOC_")
+            val similarity = (source.similarity * 100).toInt()
+            Text(
+                text = "• $fileName ($similarity%)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+        }
+    }
 }

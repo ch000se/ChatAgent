@@ -8,9 +8,14 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.chatagent.domain.usecase.IndexProjectDocumentsUseCase
 import com.example.chatagent.notification.NotificationHelper
 import com.example.chatagent.worker.DailySummaryWorker
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -20,6 +25,11 @@ class MyApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var indexProjectDocumentsUseCase: IndexProjectDocumentsUseCase
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         const val DAILY_SUMMARY_HOUR = 5
@@ -32,8 +42,41 @@ class MyApp : Application(), Configuration.Provider {
         // Create notification channel
         NotificationHelper.createNotificationChannel(this)
 
+        // Auto-index project documents on startup
+        indexProjectDocuments()
+
         // Schedule daily summary with LLM
         scheduleDailySummary()
+    }
+
+    private fun indexProjectDocuments() {
+        applicationScope.launch {
+            try {
+                android.util.Log.d("MyApp", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                android.util.Log.d("MyApp", "📚 PROJECT DOCS AUTO-INDEXING")
+                android.util.Log.d("MyApp", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                indexProjectDocumentsUseCase().collect { status ->
+                    when (status) {
+                        is IndexProjectDocumentsUseCase.IndexingStatus.Scanning -> {
+                            android.util.Log.d("MyApp", "🔍 Scanning for project documents...")
+                        }
+                        is IndexProjectDocumentsUseCase.IndexingStatus.Found -> {
+                            android.util.Log.d("MyApp", "📄 Found ${status.count} documents")
+                        }
+                        is IndexProjectDocumentsUseCase.IndexingStatus.Indexing -> {
+                            android.util.Log.d("MyApp", "⚙️  Indexing [${status.current}/${status.total}]: ${status.fileName}")
+                        }
+                        is IndexProjectDocumentsUseCase.IndexingStatus.Completed -> {
+                            android.util.Log.d("MyApp", "✅ Indexing completed: ${status.indexed} indexed, ${status.skipped} skipped")
+                            android.util.Log.d("MyApp", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MyApp", "❌ Failed to index project docs", e)
+            }
+        }
     }
 
     override val workManagerConfiguration: Configuration

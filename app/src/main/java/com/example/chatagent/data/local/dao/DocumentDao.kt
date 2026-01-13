@@ -17,6 +17,9 @@ interface DocumentDao {
     @Query("SELECT * FROM documents WHERE id = :documentId")
     suspend fun getDocumentById(documentId: String): DocumentEntity?
 
+    @Query("SELECT * FROM documents WHERE fileName = :fileName LIMIT 1")
+    suspend fun getDocumentByFileName(fileName: String): DocumentEntity?
+
     @Query("SELECT * FROM documents WHERE indexed = 1 ORDER BY indexedAt DESC")
     fun getIndexedDocuments(): Flow<List<DocumentEntity>>
 
