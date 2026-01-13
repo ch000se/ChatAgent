@@ -1,0 +1,69 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r scripts/pr_review/requirements.txt
+
+      - name: Start MCP Git Server
+        run: |
+          cd mcp_servers
+          python git_server.py > git_server.log 2>&1 &
+          echo $! > git_server.pid
+          sleep 5
+
+          # Health check
+          curl -f http://localhost:3002/health || (cat git_server.log && exit 1)
+          echo "MCP server started successfully"
+
+      - name: Run PR Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.repository }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.sha }}
+          MCP_URL: "http://localhost:3002"
+        run: |
+          cd scripts/pr_review
+          python review_pr.py
+
+      - name: Stop MCP Server
+        if: always()
+        run: |
+          if [ -f mcp_servers/git_server.pid ]; then
+            kill $(cat mcp_servers/git_server.pid) || true
+          fi

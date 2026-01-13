@@ -27,7 +27,20 @@
       "Bash(tasklist:*)",
       "Bash(taskkill:*)",
       "Bash(cmd //c \"taskkill /F /PID 21124 /PID 5112 /PID 35536 /PID 34312\")",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(git -C \"D:\\\\AndroidStudioProjects\\\\ChatAgent\" log --oneline --all -15)",
+      "Bash(git -C \"D:\\\\AndroidStudioProjects\\\\ChatAgent\" config:*)",
+      "Bash(python:*)",
+      "Bash(pkill:*)",
+      "Bash(netstat:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(while read pid)",
+      "Bash(do taskkill //F //PID $pid)",
+      "Bash(done)",
+      "Bash(git diff:*)",
+      "Bash(xargs:*)"
     ]
   }
 }
