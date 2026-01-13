@@ -161,8 +161,22 @@ Provide specific file/line references. Focus on issues that impact correctness, 
 
             print(f"[ClaudeReviewer] Received response: {len(response_text)} chars")
 
-            # Parse JSON response
-            review_data = json.loads(response_text)
+            # Parse JSON response - handle markdown code blocks
+            json_text = response_text.strip()
+
+            # Remove markdown code blocks if present
+            if json_text.startswith("```json"):
+                json_text = json_text[7:]  # Remove ```json
+            elif json_text.startswith("```"):
+                json_text = json_text[3:]  # Remove ```
+
+            if json_text.endswith("```"):
+                json_text = json_text[:-3]  # Remove trailing ```
+
+            json_text = json_text.strip()
+
+            # Parse JSON
+            review_data = json.loads(json_text)
 
             # Convert to ReviewOutput
             review = ReviewOutput(
