@@ -27,6 +27,11 @@ sealed class Command {
         override val rawInput: String
     ) : Command()
 
+    data class Support(
+        override val rawInput: String,
+        val ticketIdOrQuery: String
+    ) : Command()
+
     data class Unknown(
         override val rawInput: String
     ) : Command()

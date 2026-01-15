@@ -6,6 +6,8 @@ import com.example.chatagent.data.local.ChatDatabase
 import com.example.chatagent.data.local.dao.DocumentDao
 import com.example.chatagent.data.local.dao.EmbeddingDao
 import com.example.chatagent.data.local.dao.MessageDao
+import com.example.chatagent.data.local.dao.SupportTicketDao
+import com.example.chatagent.data.local.dao.SupportUserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,5 +49,17 @@ object DatabaseModule {
     @Singleton
     fun provideEmbeddingDao(database: ChatDatabase): EmbeddingDao {
         return database.embeddingDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportTicketDao(database: ChatDatabase): SupportTicketDao {
+        return database.supportTicketDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportUserDao(database: ChatDatabase): SupportUserDao {
+        return database.supportUserDao()
     }
 }
