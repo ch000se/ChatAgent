@@ -50,6 +50,14 @@ object CommandParser {
 
             "project", "info" -> Command.ProjectInfo(rawInput = trimmed)
 
+            "support" -> {
+                if (args.isEmpty()) {
+                    Command.Unknown(trimmed) // /support requires ticket ID or query
+                } else {
+                    Command.Support(rawInput = trimmed, ticketIdOrQuery = args)
+                }
+            }
+
             else -> Command.Unknown(trimmed)
         }
     }
@@ -120,6 +128,16 @@ object CommandParser {
                 usage = "/project",
                 examples = listOf(
                     "/project"
+                )
+            ),
+            CommandInfo(
+                name = "/support",
+                description = "Get support assistance with intelligent context-aware responses",
+                usage = "/support <ticket-id|query>",
+                examples = listOf(
+                    "/support ticket-001",
+                    "/support Why doesn't authentication work?",
+                    "/support RAG search issues"
                 )
             )
         )

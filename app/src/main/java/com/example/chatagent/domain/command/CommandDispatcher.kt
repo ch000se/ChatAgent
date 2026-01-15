@@ -12,7 +12,8 @@ class CommandDispatcher @Inject constructor(
     private val codeHandler: CodeSearchCommandHandler,
     private val docsHandler: DocsCommandHandler,
     private val gitHandler: GitCommandHandler,
-    private val projectInfoHandler: ProjectInfoCommandHandler
+    private val projectInfoHandler: ProjectInfoCommandHandler,
+    private val supportHandler: SupportCommandHandler
 ) {
 
     suspend fun dispatch(command: Command): CommandResult {
@@ -22,6 +23,7 @@ class CommandDispatcher @Inject constructor(
             is Command.Docs -> docsHandler.handle(command)
             is Command.Git -> gitHandler.handle(command)
             is Command.ProjectInfo -> projectInfoHandler.handle(command)
+            is Command.Support -> supportHandler.handle(command)
             is Command.Unknown -> handleUnknownCommand(command)
         }
     }
@@ -38,6 +40,7 @@ class CommandDispatcher @Inject constructor(
                 - `/docs <запит>` - Пошук тільки в документації
                 - `/git [status|log|diff|branch]` - Git операції через MCP
                 - `/project` - Інформація про проект та архітектуру
+                - `/support <ticket-id|запит>` - AI асистент підтримки з контекстом
 
                 💡 Приклади:
                 - `/help як працює RAG`
@@ -45,6 +48,8 @@ class CommandDispatcher @Inject constructor(
                 - `/docs quickstart`
                 - `/git status`
                 - `/project`
+                - `/support ticket-001`
+                - `/support Why doesn't authentication work?`
             """.trimIndent(),
             success = false,
             error = "Unknown command",
