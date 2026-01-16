@@ -1,0 +1,176 @@
+default_platform(:android)
+
+platform :android do
+
+  # =============================================
+  # LANE: Test
+  # Run all unit tests
+  # =============================================
+  desc "Run all unit tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  # =============================================
+  # LANE: Lint
+  # Run lint checks
+  # =============================================
+  desc "Run lint checks"
+  lane :lint do
+    gradle(task: "lint")
+  end
+
+  # =============================================
+  # LANE: Build Debug
+  # Build debug APK
+  # =============================================
+  desc "Build debug APK"
+  lane :build_debug do
+    gradle(
+      task: "assemble",
+      build_type: "Debug"
+    )
+  end
+
+  # =============================================
+  # LANE: Build Release
+  # Build signed release AAB for Play Store
+  # =============================================
+  desc "Build signed release AAB"
+  lane :build_release do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      print_command: false,
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"]
+      }
+    )
+  end
+
+  # =============================================
+  # LANE: Deploy Internal
+  # Deploy to Google Play Internal Testing track
+  # =============================================
+  desc "Deploy to Play Store (Internal Testing)"
+  lane :deploy_internal do
+    build_release
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: "google-play-key.json",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  # =============================================
+  # LANE: Deploy Alpha
+  # Deploy to Google Play Alpha/Closed Testing track
+  # =============================================
+  desc "Deploy to Play Store (Closed Testing / Alpha)"
+  lane :deploy_alpha do
+    build_release
+
+    upload_to_play_store(
+      track: "alpha",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: "google-play-key.json",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  # =============================================
+  # LANE: Deploy Beta
+  # Deploy to Google Play Beta/Open Testing track
+  # =============================================
+  desc "Deploy to Play Store (Open Testing / Beta)"
+  lane :deploy_beta do
+    build_release
+
+    upload_to_play_store(
+      track: "beta",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: "google-play-key.json",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  # =============================================
+  # LANE: Deploy Production
+  # Deploy to Google Play Production track
+  # =============================================
+  desc "Deploy to Play Store (Production)"
+  lane :deploy_production do
+    build_release
+
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: "google-play-key.json",
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false
+    )
+  end
+
+  # =============================================
+  # LANE: Promote Internal to Beta
+  # Promote internal build to beta track
+  # =============================================
+  desc "Promote internal build to beta"
+  lane :promote_to_beta do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "beta",
+      json_key: "google-play-key.json",
+      skip_upload_apk: true,
+      skip_upload_aab: true
+    )
+  end
+
+  # =============================================
+  # LANE: Promote Beta to Production
+  # Promote beta build to production track
+  # =============================================
+  desc "Promote beta build to production"
+  lane :promote_to_production do
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production",
+      json_key: "google-play-key.json",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      rollout: "0.1" # 10% rollout initially
+    )
+  end
+
+  # =============================================
+  # LANE: Increment Version
+  # Bump version code and version name
+  # =============================================
+  desc "Increment version code"
+  lane :increment_version do |options|
+    # Read current version
+    version_code = android_get_version_code(gradle_file: "app/build.gradle.kts")
+    new_version_code = version_code.to_i + 1
+
+    # Update version code
+    android_set_version_code(
+      version_code: new_version_code,
+      gradle_file: "app/build.gradle.kts"
+    )
+
+    UI.success("Version code updated to #{new_version_code}")
+  end
+
+end

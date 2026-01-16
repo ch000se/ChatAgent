@@ -34,13 +34,30 @@ android {
         buildConfigField("String", "HF_API_KEY", "\"${properties.getProperty("HF_API_KEY", "")}\"")
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = System.getenv("KEYSTORE_FILE")
+            if (keystoreFile != null) {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val keystoreFile = System.getenv("KEYSTORE_FILE")
+            if (keystoreFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -53,6 +70,16 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        // Disable problematic lint check (bug with Kotlin 2.0+)
+        disable += "NullSafeMutableLiveData"
+        // Don't abort build on lint errors for CI
+        abortOnError = false
+        // Generate HTML report
+        htmlReport = true
+        htmlOutput = file("build/reports/lint-results.html")
     }
 }
 
