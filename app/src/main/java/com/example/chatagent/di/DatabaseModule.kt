@@ -5,9 +5,13 @@ import androidx.room.Room
 import com.example.chatagent.data.local.ChatDatabase
 import com.example.chatagent.data.local.dao.DocumentDao
 import com.example.chatagent.data.local.dao.EmbeddingDao
+import com.example.chatagent.data.local.dao.EpicDao
 import com.example.chatagent.data.local.dao.MessageDao
+import com.example.chatagent.data.local.dao.SprintDao
 import com.example.chatagent.data.local.dao.SupportTicketDao
 import com.example.chatagent.data.local.dao.SupportUserDao
+import com.example.chatagent.data.local.dao.TaskDao
+import com.example.chatagent.data.local.dao.TeamMemberDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -61,5 +65,31 @@ object DatabaseModule {
     @Singleton
     fun provideSupportUserDao(database: ChatDatabase): SupportUserDao {
         return database.supportUserDao()
+    }
+
+    // Team Assistant DAOs
+
+    @Provides
+    @Singleton
+    fun provideTaskDao(database: ChatDatabase): TaskDao {
+        return database.taskDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTeamMemberDao(database: ChatDatabase): TeamMemberDao {
+        return database.teamMemberDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSprintDao(database: ChatDatabase): SprintDao {
+        return database.sprintDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEpicDao(database: ChatDatabase): EpicDao {
+        return database.epicDao()
     }
 }

@@ -13,7 +13,8 @@ class CommandDispatcher @Inject constructor(
     private val docsHandler: DocsCommandHandler,
     private val gitHandler: GitCommandHandler,
     private val projectInfoHandler: ProjectInfoCommandHandler,
-    private val supportHandler: SupportCommandHandler
+    private val supportHandler: SupportCommandHandler,
+    private val teamHandler: TeamCommandHandler
 ) {
 
     suspend fun dispatch(command: Command): CommandResult {
@@ -24,6 +25,7 @@ class CommandDispatcher @Inject constructor(
             is Command.Git -> gitHandler.handle(command)
             is Command.ProjectInfo -> projectInfoHandler.handle(command)
             is Command.Support -> supportHandler.handle(command)
+            is Command.Team -> teamHandler.handle(command)
             is Command.Unknown -> handleUnknownCommand(command)
         }
     }
@@ -41,6 +43,7 @@ class CommandDispatcher @Inject constructor(
                 - `/git [status|log|diff|branch]` - Git операції через MCP
                 - `/project` - Інформація про проект та архітектуру
                 - `/support <ticket-id|запит>` - AI асистент підтримки з контекстом
+                - `/team <action> [params]` - Командний асистент для управління задачами
 
                 💡 Приклади:
                 - `/help як працює RAG`
@@ -49,7 +52,9 @@ class CommandDispatcher @Inject constructor(
                 - `/git status`
                 - `/project`
                 - `/support ticket-001`
-                - `/support Why doesn't authentication work?`
+                - `/team status`
+                - `/team tasks priority high`
+                - `/team priority`
             """.trimIndent(),
             success = false,
             error = "Unknown command",

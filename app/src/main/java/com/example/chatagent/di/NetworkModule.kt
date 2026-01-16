@@ -64,9 +64,9 @@ object NetworkModule {
         val builder = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)  // Increased for longer AI responses
+            .writeTimeout(60, TimeUnit.SECONDS)
 
         // Only for DEBUG: Bypass SSL certificate verification
         // WARNING: This is UNSAFE and should NEVER be used in production!
