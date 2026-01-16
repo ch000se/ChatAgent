@@ -45,3 +45,17 @@ coverage/
 
 # Ignore .env if used for secrets
 .env*
+
+# Google Play credentials
+google-play-key.json
+play-store-credentials.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# Temporary Claude Code files
+tmpclaude-*
