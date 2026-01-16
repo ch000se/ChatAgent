@@ -2,6 +2,7 @@ package com.example.chatagent.domain.util
 
 import com.example.chatagent.domain.model.Command
 import com.example.chatagent.domain.model.GitSubcommand
+import com.example.chatagent.domain.model.TeamAction
 
 object CommandParser {
 
@@ -58,6 +59,11 @@ object CommandParser {
                 }
             }
 
+            "team" -> {
+                val (action, params) = parseTeamAction(args)
+                Command.Team(rawInput = trimmed, action = action, params = params)
+            }
+
             else -> Command.Unknown(trimmed)
         }
     }
@@ -69,6 +75,36 @@ object CommandParser {
             "branch", "branches" -> GitSubcommand.Branch
             else -> GitSubcommand.Status // default
         }
+    }
+
+    private fun parseTeamAction(args: String): Pair<TeamAction, String> {
+        val parts = args.trim().split(Regex("\\s+"), limit = 2)
+        val actionStr = parts.getOrNull(0)?.lowercase() ?: ""
+        val params = parts.getOrNull(1) ?: ""
+
+        val action = when (actionStr) {
+            "status", "stat", "overview" -> TeamAction.STATUS
+            "tasks", "task", "list" -> TeamAction.TASKS
+            "priority", "priorities", "prio" -> TeamAction.PRIORITY
+            "create", "add", "new" -> TeamAction.CREATE
+            "update", "edit", "modify" -> TeamAction.UPDATE
+            "roadmap", "milestones", "plan" -> TeamAction.ROADMAP
+            "blockers", "blocked", "blocks" -> TeamAction.BLOCKERS
+            "deadlines", "due", "upcoming" -> TeamAction.DEADLINES
+            "workload", "load", "capacity" -> TeamAction.WORKLOAD
+            "stats", "statistics", "metrics" -> TeamAction.STATS
+            "help", "?" -> TeamAction.HELP
+            else -> {
+                // If no action specified, treat entire args as params for default status
+                if (actionStr.isEmpty()) {
+                    return Pair(TeamAction.STATUS, "")
+                }
+                // If action is not recognized, might be a natural language query
+                return Pair(TeamAction.TASKS, args)
+            }
+        }
+
+        return Pair(action, params)
     }
 
     /**
@@ -138,6 +174,22 @@ object CommandParser {
                     "/support ticket-001",
                     "/support Why doesn't authentication work?",
                     "/support RAG search issues"
+                )
+            ),
+            CommandInfo(
+                name = "/team",
+                description = "Team assistant for task management, project status, and priority recommendations",
+                usage = "/team <action> [params]",
+                examples = listOf(
+                    "/team status",
+                    "/team tasks priority high",
+                    "/team priority",
+                    "/team create Implement user authentication",
+                    "/team blockers",
+                    "/team roadmap",
+                    "/team deadlines",
+                    "/team workload",
+                    "/team stats"
                 )
             )
         )

@@ -32,6 +32,12 @@ sealed class Command {
         val ticketIdOrQuery: String
     ) : Command()
 
+    data class Team(
+        override val rawInput: String,
+        val action: TeamAction,
+        val params: String = ""
+    ) : Command()
+
     data class Unknown(
         override val rawInput: String
     ) : Command()
