@@ -6,7 +6,9 @@ import com.example.chatagent.data.mapper.toEntity
 import com.example.chatagent.data.remote.api.OllamaApiService
 import com.example.chatagent.data.remote.dto.OllamaChatRequest
 import com.example.chatagent.data.remote.dto.OllamaMessage
+import com.example.chatagent.data.remote.dto.OllamaOptions
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.model.OllamaGenerationConfig
 import com.example.chatagent.domain.model.OllamaModel
 import com.example.chatagent.domain.model.TokenUsage
 import com.example.chatagent.domain.repository.OllamaInferenceStats
@@ -128,6 +130,91 @@ class OllamaRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error sending message to Ollama", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun sendMessageWithConfig(
+        message: String,
+        conversationHistory: List<Message>,
+        config: OllamaGenerationConfig,
+        systemPrompt: String?
+    ): Result<Message> = withContext(Dispatchers.IO) {
+        try {
+            val ollamaMessages = mutableListOf<OllamaMessage>()
+
+            // Add system prompt if provided
+            if (!systemPrompt.isNullOrBlank()) {
+                ollamaMessages.add(OllamaMessage(role = "system", content = systemPrompt))
+            }
+
+            // Add conversation history
+            ollamaMessages.addAll(conversationHistory.map { msg ->
+                OllamaMessage(
+                    role = if (msg.isFromUser) "user" else "assistant",
+                    content = msg.content
+                )
+            })
+
+            // Add current user message
+            ollamaMessages.add(OllamaMessage(role = "user", content = message))
+
+            val options = OllamaOptions(
+                temperature = config.temperature,
+                numPredict = config.maxTokens,
+                numCtx = config.contextWindow,
+                topP = config.topP,
+                topK = config.topK
+            )
+
+            val request = OllamaChatRequest(
+                model = _selectedModel.value,
+                messages = ollamaMessages,
+                stream = false,
+                options = options
+            )
+
+            Log.d(TAG, "Sending optimized message: model=${_selectedModel.value}, temp=${config.temperature}, ctx=${config.contextWindow}")
+
+            val response = ollamaApiService.chat(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                val ollamaResponse = response.body()!!
+
+                val tokensPerSecond = if (ollamaResponse.evalDuration != null && ollamaResponse.evalDuration > 0) {
+                    (ollamaResponse.evalCount ?: 0) / (ollamaResponse.evalDuration / 1_000_000_000.0)
+                } else 0.0
+
+                _inferenceStats.value = OllamaInferenceStats(
+                    totalDurationMs = (ollamaResponse.totalDuration ?: 0) / 1_000_000,
+                    promptEvalCount = ollamaResponse.promptEvalCount ?: 0,
+                    evalCount = ollamaResponse.evalCount ?: 0,
+                    tokensPerSecond = tokensPerSecond
+                )
+
+                val tokenUsage = TokenUsage(
+                    inputTokens = ollamaResponse.promptEvalCount ?: 0,
+                    outputTokens = ollamaResponse.evalCount ?: 0,
+                    totalTokens = (ollamaResponse.promptEvalCount ?: 0) + (ollamaResponse.evalCount ?: 0)
+                )
+
+                val assistantMessage = Message(
+                    id = UUID.randomUUID().toString(),
+                    content = ollamaResponse.message.content,
+                    isFromUser = false,
+                    timestamp = System.currentTimeMillis(),
+                    tokenUsage = tokenUsage
+                )
+
+                Log.d(TAG, "Optimized response: ${assistantMessage.content.take(100)}...")
+                Result.success(assistantMessage)
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Log.e(TAG, "Ollama API error: ${response.code()} - $errorBody")
+                Result.failure(Exception("Ollama error: ${response.code()} - $errorBody"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending optimized message to Ollama", e)
             Result.failure(e)
         }
     }
