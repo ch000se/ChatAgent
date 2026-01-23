@@ -1,0 +1,37 @@
+2024-01-15 08:00:01 INFO  [main] Application started, version 2.4.1
+2024-01-15 08:00:02 INFO  [main] Loading configuration from /etc/app/config.yml
+2024-01-15 08:00:03 INFO  [main] Database connection pool initialized (min=5, max=20)
+2024-01-15 08:00:03 INFO  [main] Redis cache connected at 127.0.0.1:6379
+2024-01-15 08:00:05 INFO  [http] HTTP server listening on port 8080
+2024-01-15 08:05:12 INFO  [http] GET /api/users 200 (45ms) user_agent=Mozilla/5.0
+2024-01-15 08:05:15 ERROR [auth] JWT token expired for user_id=u142, ip=192.168.1.50
+2024-01-15 08:05:16 INFO  [auth] Refreshing token for user_id=u142
+2024-01-15 08:10:22 WARN  [db] Slow query: SELECT * FROM orders WHERE status='pending' (2340ms)
+2024-01-15 08:12:33 ERROR [auth] Login failed: invalid password for user_id=u142, attempts=3
+2024-01-15 08:12:34 WARN  [security] Brute force detection: user_id=u142, 3 failed attempts in 5min
+2024-01-15 08:15:01 ERROR [payment] Timeout calling payment gateway api.stripe.com (30000ms)
+2024-01-15 08:15:02 INFO  [payment] Scheduling retry for txn_id=txn_8812, attempt=2
+2024-01-15 08:20:10 INFO  [http] POST /api/orders 201 (120ms) user_id=u301
+2024-01-15 08:22:14 ERROR [auth] Login failed: invalid password for user_id=u203, attempts=1
+2024-01-15 08:25:30 INFO  [worker] Background job completed: email_notifications (processed=45, failed=2)
+2024-01-15 08:30:45 ERROR [network] Connection reset by peer: upstream=api-gateway:443, client=u054
+2024-01-15 08:30:46 WARN  [network] Circuit breaker OPEN for api-gateway (failures=5/5)
+2024-01-15 08:31:00 INFO  [network] Circuit breaker half-open, testing api-gateway
+2024-01-15 08:31:01 INFO  [network] Circuit breaker CLOSED for api-gateway (success)
+2024-01-15 08:35:22 ERROR [auth] Account locked: user_id=u142, reason=max_attempts_exceeded
+2024-01-15 08:40:15 INFO  [http] GET /api/products 200 (32ms) cache=HIT
+2024-01-15 08:45:00 INFO  [scheduler] Running scheduled task: cleanup_expired_sessions
+2024-01-15 08:45:01 INFO  [scheduler] Removed 127 expired sessions
+2024-01-15 09:00:10 WARN  [db] Connection pool usage at 85% (17/20)
+2024-01-15 09:01:10 ERROR [db] Slow query: SELECT u.*, o.* FROM users u JOIN orders o ON u.id=o.user_id WHERE o.created_at > '2024-01-01' (3200ms)
+2024-01-15 09:05:00 INFO  [metrics] CPU: 45%, Memory: 2.1GB/4GB, Disk: 67%
+2024-01-15 09:10:22 INFO  [http] GET /api/dashboard 200 (89ms) user_id=u301
+2024-01-15 09:12:55 ERROR [payment] Transaction declined: user_id=u019, reason=insufficient_funds, amount=149.99
+2024-01-15 09:15:30 ERROR [auth] Login failed: invalid password for user_id=u077, attempts=2
+2024-01-15 09:20:00 INFO  [worker] Background job started: report_generation
+2024-01-15 09:22:18 ERROR [network] DNS resolution failed for analytics.external-service.com
+2024-01-15 09:22:19 WARN  [analytics] Analytics event queue backed up (pending=1240)
+2024-01-15 09:30:00 WARN  [security] Login from new geolocation: user_id=u088, country=UA (previous=US)
+2024-01-15 09:35:00 INFO  [http] Health check: all services UP
+2024-01-15 09:40:12 INFO  [cache] Cache eviction: removed 340 stale entries
+2024-01-15 09:45:12 ERROR [payment] Card declined: user_id=u156, reason=card_expired, last4=4242

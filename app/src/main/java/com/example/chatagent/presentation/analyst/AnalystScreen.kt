@@ -184,7 +184,10 @@ fun AnalystScreen(
                         "text/plain"
                     ))
                 },
-                onClearFile = { viewModel.clearFile() }
+                onClearFile = { viewModel.clearFile() },
+                onLoadSample = { fileName ->
+                    viewModel.loadSampleFile(context.assets, fileName)
+                }
             )
 
             // Data Preview
@@ -369,7 +372,8 @@ fun FilePickerCard(
     isLoading: Boolean,
     fileError: String?,
     onPickFile: () -> Unit,
-    onClearFile: () -> Unit
+    onClearFile: () -> Unit,
+    onLoadSample: (String) -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -457,6 +461,22 @@ fun FilePickerCard(
                         Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Choose File")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Divider(modifier = Modifier.padding(horizontal = 32.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Or try a sample:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { onLoadSample("sample_errors.csv") }) {
+                            Text("Errors.csv", style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(onClick = { onLoadSample("sample_users.json") }) {
+                            Text("Users.json", style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(onClick = { onLoadSample("sample_app.log") }) {
+                            Text("App.log", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }

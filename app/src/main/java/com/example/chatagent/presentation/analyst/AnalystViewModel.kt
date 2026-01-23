@@ -1,6 +1,7 @@
 package com.example.chatagent.presentation.analyst
 
 import android.content.ContentResolver
+import android.content.res.AssetManager
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -132,6 +133,33 @@ class AnalystViewModel @Inject constructor(
         lastUri = null
         lastContentResolver = null
         _uiState.update { it.copy(loadedFile = null, messages = emptyList()) }
+    }
+
+    fun loadSampleFile(assetManager: AssetManager, assetFileName: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isParsingFile = true, fileError = null) }
+
+            try {
+                val rawText = assetManager.open(assetFileName).bufferedReader().use { it.readText() }
+                val maxChars = _uiState.value.generationConfig.contextWindow * 3
+
+                parseFileUseCase.fromRawText(rawText, assetFileName, maxChars)
+                    .onSuccess { file ->
+                        _uiState.update {
+                            it.copy(loadedFile = file, isParsingFile = false, messages = emptyList())
+                        }
+                    }
+                    .onFailure { error ->
+                        _uiState.update {
+                            it.copy(isParsingFile = false, fileError = error.message ?: "Failed to parse sample")
+                        }
+                    }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isParsingFile = false, fileError = e.message ?: "Failed to load sample")
+                }
+            }
+        }
     }
 
     fun onInputTextChanged(text: String) {

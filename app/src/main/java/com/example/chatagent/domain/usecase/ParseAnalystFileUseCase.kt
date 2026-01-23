@@ -15,6 +15,34 @@ import javax.inject.Inject
 
 class ParseAnalystFileUseCase @Inject constructor() {
 
+    suspend fun fromRawText(
+        rawText: String,
+        fileName: String,
+        maxChars: Int
+    ): Result<AnalystFile> = withContext(Dispatchers.IO) {
+        try {
+            val fileType = detectFileType(fileName)
+            val (parsedContent, metadata, wasTruncated) = when (fileType) {
+                AnalystFileType.CSV -> parseCsv(rawText, maxChars)
+                AnalystFileType.JSON -> parseJson(rawText, maxChars)
+                AnalystFileType.LOG -> parseLog(rawText, maxChars)
+            }
+            Result.success(
+                AnalystFile(
+                    fileName = fileName,
+                    fileType = fileType,
+                    rawSize = rawText.length.toLong(),
+                    parsedContent = parsedContent,
+                    tokenEstimate = parsedContent.length / 4,
+                    wasTruncated = wasTruncated,
+                    metadata = metadata
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend operator fun invoke(
         uri: Uri,
         resolver: ContentResolver,
