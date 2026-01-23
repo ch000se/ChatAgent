@@ -87,5 +87,6 @@
         <domain includeSubdomains="true">192.168.1.0</domain>
         <!-- Google Cloud VPS for Ollama -->
         <domain includeSubdomains="true">34.27.131.129</domain>
+        <domain includeSubdomains="true">136.113.112.61</domain>
     </domain-config>
 </network-security-config>

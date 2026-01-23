@@ -1,12 +1,19 @@
 package com.example.chatagent.domain.repository
 
 import com.example.chatagent.domain.model.Message
+import com.example.chatagent.domain.model.OllamaGenerationConfig
 import com.example.chatagent.domain.model.OllamaModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface OllamaRepository {
     suspend fun sendMessage(message: String, conversationHistory: List<Message>): Result<Message>
+    suspend fun sendMessageWithConfig(
+        message: String,
+        conversationHistory: List<Message>,
+        config: OllamaGenerationConfig,
+        systemPrompt: String? = null
+    ): Result<Message>
     suspend fun listModels(): Result<List<OllamaModel>>
     suspend fun checkConnection(): Result<String>
     fun getSelectedModel(): StateFlow<String>
