@@ -43,7 +43,8 @@
       "Bash(xargs:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(where:*)"
     ]
   }
 }

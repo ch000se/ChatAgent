@@ -17,3 +17,7 @@ annotation class McpRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class EmbeddingRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class OllamaRetrofit

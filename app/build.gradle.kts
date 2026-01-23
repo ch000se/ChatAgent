@@ -32,6 +32,8 @@ android {
         buildConfigField("String", "API_KEY", "\"${properties.getProperty("API_KEY", "")}\"")
         buildConfigField("String", "API_URL", "\"${properties.getProperty("API_URL", "https://api.anthropic.com/v1/")}\"")
         buildConfigField("String", "HF_API_KEY", "\"${properties.getProperty("HF_API_KEY", "")}\"")
+        // Ollama URL - use 10.0.2.2 for Android emulator or local IP for real device
+        buildConfigField("String", "OLLAMA_URL", "\"${properties.getProperty("OLLAMA_URL", "http://10.0.2.2:11434/")}\"")
     }
 
     signingConfigs {

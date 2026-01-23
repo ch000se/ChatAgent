@@ -8,6 +8,7 @@ import com.example.chatagent.presentation.benchmark.BenchmarkScreen
 import com.example.chatagent.presentation.chat.ChatScreen
 import com.example.chatagent.presentation.documents.DocumentScreen
 import com.example.chatagent.presentation.mcp.McpScreen
+import com.example.chatagent.presentation.ollama.OllamaChatScreen
 import com.example.chatagent.presentation.pipeline.PipelineScreen
 import com.example.chatagent.presentation.rag.RagComparisonScreen
 import com.example.chatagent.presentation.ragchat.RagChatScreen
@@ -37,6 +38,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToRagChat = {
                     navController.navigate(Screen.RagChat.route)
+                },
+                onNavigateToOllama = {
+                    navController.navigate(Screen.Ollama.route)
                 }
             )
         }
@@ -80,6 +84,14 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(route = Screen.Ollama.route) {
+            OllamaChatScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -91,4 +103,5 @@ sealed class Screen(val route: String) {
     data object Documents : Screen("documents")
     data object RagComparison : Screen("rag_comparison")
     data object RagChat : Screen("rag_chat")
+    data object Ollama : Screen("ollama")
 }
