@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.chatagent.presentation.analyst.AnalystScreen
 import com.example.chatagent.presentation.benchmark.BenchmarkScreen
 import com.example.chatagent.presentation.chat.ChatScreen
 import com.example.chatagent.presentation.documents.DocumentScreen
@@ -41,6 +42,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToOllama = {
                     navController.navigate(Screen.Ollama.route)
+                },
+                onNavigateToAnalyst = {
+                    navController.navigate(Screen.Analyst.route)
                 }
             )
         }
@@ -92,6 +96,14 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(route = Screen.Analyst.route) {
+            AnalystScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -104,4 +116,5 @@ sealed class Screen(val route: String) {
     data object RagComparison : Screen("rag_comparison")
     data object RagChat : Screen("rag_chat")
     data object Ollama : Screen("ollama")
+    data object Analyst : Screen("analyst")
 }
