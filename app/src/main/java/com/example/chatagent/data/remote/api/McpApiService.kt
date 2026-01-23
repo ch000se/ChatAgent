@@ -7,7 +7,7 @@ import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Url
 
-interface McpApiService {
+interface yfMcpApiService {
     @POST
     @Headers(
         "Accept: application/json, text/event-stream",

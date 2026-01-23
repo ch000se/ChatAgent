@@ -2,6 +2,7 @@ package com.example.chatagent.di
 
 import com.example.chatagent.BuildConfig
 import com.example.chatagent.data.remote.api.ChatApiService
+import com.example.chatagent.data.remote.api.OllamaApiService
 import com.example.chatagent.data.remote.client.SseResponseConverterFactory
 import com.google.gson.Gson
 import dagger.Module
@@ -255,5 +256,36 @@ object NetworkModule {
         @EmbeddingRetrofit retrofit: Retrofit
     ): com.example.chatagent.data.remote.api.EmbeddingApiService {
         return retrofit.create(com.example.chatagent.data.remote.api.EmbeddingApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @OllamaRetrofit
+    fun provideOllamaRetrofit(loggingInterceptor: HttpLoggingInterceptor): Retrofit {
+        val clientBuilder = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(300, TimeUnit.SECONDS) // Long timeout for local LLM inference
+            .writeTimeout(60, TimeUnit.SECONDS)
+
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.OLLAMA_URL)
+            .client(clientBuilder.build())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOllamaApiService(
+        @OllamaRetrofit retrofit: Retrofit
+    ): OllamaApiService {
+        return retrofit.create(OllamaApiService::class.java)
     }
 }

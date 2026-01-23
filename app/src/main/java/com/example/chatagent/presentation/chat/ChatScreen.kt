@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Cable
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
@@ -79,6 +80,7 @@ fun ChatScreen(
     onNavigateToDocuments: () -> Unit = {},
     onNavigateToRagComparison: () -> Unit = {},
     onNavigateToRagChat: () -> Unit = {},
+    onNavigateToOllama: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -128,6 +130,12 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = onNavigateToOllama) {
+                        Icon(
+                            imageVector = Icons.Default.Memory,
+                            contentDescription = "Ollama Local LLM"
+                        )
+                    }
                     IconButton(onClick = onNavigateToRagChat) {
                         Icon(
                             imageVector = Icons.Default.Chat,
