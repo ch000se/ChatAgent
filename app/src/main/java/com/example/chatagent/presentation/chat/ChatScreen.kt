@@ -81,6 +81,7 @@ fun ChatScreen(
     onNavigateToRagComparison: () -> Unit = {},
     onNavigateToRagChat: () -> Unit = {},
     onNavigateToOllama: () -> Unit = {},
+    onNavigateToAnalyst: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -134,6 +135,12 @@ fun ChatScreen(
                         Icon(
                             imageVector = Icons.Default.Memory,
                             contentDescription = "Ollama Local LLM"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToAnalyst) {
+                        Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = "Local Analyst"
                         )
                     }
                     IconButton(onClick = onNavigateToRagChat) {

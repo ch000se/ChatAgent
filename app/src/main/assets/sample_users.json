@@ -1,0 +1,17 @@
+[
+  {"user_id": "u001", "name": "Alice", "plan": "premium", "signups_source": "google_ads", "sessions": 45, "pages_viewed": 312, "purchases": 8, "last_page_before_exit": "/checkout", "churn_risk": "low"},
+  {"user_id": "u002", "name": "Bob", "plan": "free", "signups_source": "organic", "sessions": 3, "pages_viewed": 7, "purchases": 0, "last_page_before_exit": "/pricing", "churn_risk": "high"},
+  {"user_id": "u003", "name": "Carol", "plan": "premium", "signups_source": "referral", "sessions": 62, "pages_viewed": 480, "purchases": 15, "last_page_before_exit": "/dashboard", "churn_risk": "low"},
+  {"user_id": "u004", "name": "Dave", "plan": "basic", "signups_source": "google_ads", "sessions": 12, "pages_viewed": 56, "purchases": 2, "last_page_before_exit": "/checkout", "churn_risk": "medium"},
+  {"user_id": "u005", "name": "Eve", "plan": "free", "signups_source": "organic", "sessions": 1, "pages_viewed": 2, "purchases": 0, "last_page_before_exit": "/signup", "churn_risk": "high"},
+  {"user_id": "u006", "name": "Frank", "plan": "basic", "signups_source": "facebook_ads", "sessions": 8, "pages_viewed": 34, "purchases": 1, "last_page_before_exit": "/features", "churn_risk": "medium"},
+  {"user_id": "u007", "name": "Grace", "plan": "premium", "signups_source": "referral", "sessions": 55, "pages_viewed": 390, "purchases": 12, "last_page_before_exit": "/settings", "churn_risk": "low"},
+  {"user_id": "u008", "name": "Hank", "plan": "free", "signups_source": "google_ads", "sessions": 2, "pages_viewed": 4, "purchases": 0, "last_page_before_exit": "/pricing", "churn_risk": "high"},
+  {"user_id": "u009", "name": "Ivy", "plan": "basic", "signups_source": "organic", "sessions": 20, "pages_viewed": 98, "purchases": 3, "last_page_before_exit": "/checkout", "churn_risk": "medium"},
+  {"user_id": "u010", "name": "Jack", "plan": "premium", "signups_source": "facebook_ads", "sessions": 38, "pages_viewed": 267, "purchases": 9, "last_page_before_exit": "/dashboard", "churn_risk": "low"},
+  {"user_id": "u011", "name": "Karen", "plan": "free", "signups_source": "organic", "sessions": 1, "pages_viewed": 1, "purchases": 0, "last_page_before_exit": "/home", "churn_risk": "high"},
+  {"user_id": "u012", "name": "Leo", "plan": "basic", "signups_source": "google_ads", "sessions": 15, "pages_viewed": 72, "purchases": 2, "last_page_before_exit": "/support", "churn_risk": "medium"},
+  {"user_id": "u013", "name": "Mia", "plan": "premium", "signups_source": "referral", "sessions": 70, "pages_viewed": 520, "purchases": 18, "last_page_before_exit": "/analytics", "churn_risk": "low"},
+  {"user_id": "u014", "name": "Nick", "plan": "free", "signups_source": "facebook_ads", "sessions": 2, "pages_viewed": 5, "purchases": 0, "last_page_before_exit": "/pricing", "churn_risk": "high"},
+  {"user_id": "u015", "name": "Olivia", "plan": "basic", "signups_source": "organic", "sessions": 25, "pages_viewed": 130, "purchases": 4, "last_page_before_exit": "/checkout", "churn_risk": "low"}
+]
