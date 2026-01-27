@@ -228,8 +228,7 @@ class ChatRepositoryImpl @Inject constructor(
                 }
 
                 val request = ChatRequest(
-                    // system = _currentSystemPrompt.value,
-                    system = null,
+                    system = _currentSystemPrompt.value,
                     messages = limitedHistory,
                     maxTokens = 2048,
                     temperature = _currentTemperature.value,

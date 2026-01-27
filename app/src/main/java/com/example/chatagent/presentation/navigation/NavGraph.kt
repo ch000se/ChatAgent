@@ -10,6 +10,7 @@ import com.example.chatagent.presentation.chat.ChatScreen
 import com.example.chatagent.presentation.documents.DocumentScreen
 import com.example.chatagent.presentation.mcp.McpScreen
 import com.example.chatagent.presentation.ollama.OllamaChatScreen
+import com.example.chatagent.presentation.personalagent.PersonalAgentScreen
 import com.example.chatagent.presentation.pipeline.PipelineScreen
 import com.example.chatagent.presentation.rag.RagComparisonScreen
 import com.example.chatagent.presentation.ragchat.RagChatScreen
@@ -45,6 +46,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToAnalyst = {
                     navController.navigate(Screen.Analyst.route)
+                },
+                onNavigateToPersonalAgent = {
+                    navController.navigate(Screen.PersonalAgent.route)
                 }
             )
         }
@@ -104,6 +108,14 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        composable(route = Screen.PersonalAgent.route) {
+            PersonalAgentScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -117,4 +129,5 @@ sealed class Screen(val route: String) {
     data object RagChat : Screen("rag_chat")
     data object Ollama : Screen("ollama")
     data object Analyst : Screen("analyst")
+    data object PersonalAgent : Screen("personal_agent")
 }

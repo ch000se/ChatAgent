@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
@@ -82,6 +83,7 @@ fun ChatScreen(
     onNavigateToRagChat: () -> Unit = {},
     onNavigateToOllama: () -> Unit = {},
     onNavigateToAnalyst: () -> Unit = {},
+    onNavigateToPersonalAgent: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -131,6 +133,12 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat Agent") },
                 actions = {
+                    IconButton(onClick = onNavigateToPersonalAgent) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Personal Assistant"
+                        )
+                    }
                     IconButton(onClick = onNavigateToOllama) {
                         Icon(
                             imageVector = Icons.Default.Memory,

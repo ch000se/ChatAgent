@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.chatagent"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.chatagent"
