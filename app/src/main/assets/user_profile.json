@@ -1,0 +1,52 @@
+{
+  "name": "User",
+  "nickname": null,
+  "age": null,
+  "occupation": "Software Developer",
+  "location": null,
+  "timezone": "UTC",
+  "language": "en",
+
+  "communicationStyle": "BALANCED",
+  "preferredResponseLength": "MEDIUM",
+  "useEmojis": false,
+
+  "interests": [
+    "Technology",
+    "Programming",
+    "AI"
+  ],
+  "hobbies": [],
+  "favoriteTopics": [
+    "Software Development",
+    "Mobile Apps"
+  ],
+
+  "skills": [
+    "Android Development",
+    "Kotlin"
+  ],
+  "currentProjects": [],
+  "learningGoals": [],
+
+  "workSchedule": {
+    "workDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "workStartTime": "09:00",
+    "workEndTime": "18:00",
+    "breakTime": "13:00"
+  },
+  "productivityPeakTime": "morning",
+  "dailyRoutines": [],
+
+  "musicPreferences": [],
+  "foodPreferences": [],
+  "dietaryRestrictions": [],
+
+  "birthday": null,
+  "importantDates": {},
+
+  "notes": null,
+  "reminders": [],
+
+  "customFields": {}
+}
